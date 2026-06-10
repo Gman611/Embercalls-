@@ -18,17 +18,16 @@
   <p class="tagline">Private Desires. Premium Earnings.</p>
 
   <div id="auth-section">
-    <input type="email" id="email" placeholder="Email">
+    <input type="email" id="email" placeholder="Email" value="gerriekayser17@gmail.com">
     <input type="password" id="password" placeholder="Password">
     <br><br>
     <button onclick="signUp()">Sign Up as Creator</button>
     <button onclick="signIn()">Sign In</button>
   </div>
 
-  <div id="app-section" style="display:none;">
-    <h2>Welcome!</h2>
-    <p>You are logged in. More features coming soon.</p>
-    <button onclick="logout()">Logout</button>
+  <div id="success" style="display:none; margin-top:30px;">
+    <h2>Account Created!</h2>
+    <p>Check your email for confirmation link.</p>
   </div>
 
   <script>
@@ -39,35 +38,30 @@
     async function signUp() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      if (!email || !password) return alert("Please fill email and password");
+      
+      if (!email || !password) {
+        alert("Please enter email and password");
+        return;
+      }
 
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: { emailRedirectTo: window.location.href }
+      alert("Creating account... Please wait");
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
       });
 
       if (error) {
         alert("Error: " + error.message);
       } else {
-        alert("Account created! Please check your email (" + email + ") and click the confirmation link.");
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('success').style.display = 'block';
+        alert("Success! Check your email (" + email + ") for confirmation link.");
       }
     }
 
     async function signIn() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) alert("Sign in failed: " + error.message);
-      else {
-        document.getElementById('auth-section').style.display = 'none';
-        document.getElementById('app-section').style.display = 'block';
-      }
-    }
-
-    function logout() {
-      supabase.auth.signOut();
-      location.reload();
+      alert("Sign in feature coming soon. Use Sign Up first.");
     }
   </script>
 </body>
