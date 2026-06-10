@@ -4,63 +4,71 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EmberCalls</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body {
-      margin: 0;
-      padding: 40px 20px;
-      background: linear-gradient(135deg, #2a0000, #4a0000, #1a0000);
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      min-height: 100vh;
-    }
-    h1 { font-size: 52px; color: #ffd700; margin: 20px 0 10px; }
-    .tagline { font-size: 26px; color: #ffd700; margin-bottom: 30px; }
-    p { font-size: 20px; max-width: 600px; margin: 15px auto; }
-    button {
-      margin: 30px 10px;
-      padding: 15px 40px;
-      font-size: 20px;
-      background: #ffd700;
-      color: #2a0000;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-    }
-    input {
-      padding: 15px;
-      font-size: 18px;
-      width: 80%;
-      max-width: 400px;
-      margin: 10px auto;
-      border-radius: 50px;
-      border: none;
-    }
+    body { margin:0; padding:40px 20px; background:linear-gradient(135deg,#2a0000,#4a0000,#1a0000); color:white; font-family:Arial,sans-serif; text-align:center; min-height:100vh; }
+    h1 { font-size:48px; color:#ffd700; }
+    .tagline { font-size:24px; color:#ffd700; margin:20px 0; }
+    input, button { padding:15px; margin:10px; width:80%; max-width:400px; border-radius:50px; font-size:18px; }
+    button { background:#ffd700; color:#2a0000; border:none; cursor:pointer; }
+    .hidden { display:none; }
   </style>
 </head>
 <body>
   <h1>🔥 EmberCalls</h1>
   <p class="tagline">Private Desires. Premium Earnings.</p>
-  <p><strong>18+ Only • Premium 1-on-1 Adult Video Calls</strong></p>
-  <p>Creators keep more money. Fans get better private experiences.</p>
 
-  <input type="email" id="email" placeholder="Enter your email for early access">
-  <br>
-  <button onclick="joinWaitlist()">Join Waiting List</button>
-  <button onclick="enterSite()">Enter Site</button>
+  <div id="auth-section">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <br>
+    <button onclick="signUp()">Sign Up as Creator</button>
+    <button onclick="signIn()">Sign In</button>
+  </div>
+
+  <div id="app-section" class="hidden">
+    <h2>Welcome to EmberCalls!</h2>
+    <p>You are logged in.</p>
+    <button onclick="logout()">Logout</button>
+  </div>
 
   <script>
-    function joinWaitlist() {
+    const supabaseUrl = 'https://xxcidnwdmnhjyibbizve.supabase.co';
+    const supabaseKey = 'sb_publishable_icko5NLukyFvJUSrLs_aeg_AMIln8tO';
+    const supabase = Supabase.createClient(supabaseUrl, supabaseKey);
+
+    async function signUp() {
       const email = document.getElementById('email').value;
-      if (email) {
-        alert("Thank you! You've been added to the waiting list 🔥\n\nWe'll notify you when EmberCalls launches.");
-      } else {
-        alert("Please enter your email");
-      }
+      const password = document.getElementById('password').value;
+      if (!email || !password) return alert("Fill email and password");
+
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) alert(error.message);
+      else alert("Account created! Check your email to confirm.");
     }
-    function enterSite() {
-      alert("Welcome to EmberCalls! 🔥\n\nThe full app is being built. More features coming soon.");
+
+    async function signIn() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) alert(error.message);
+      else showApp();
     }
+
+    function showApp() {
+      document.getElementById('auth-section').classList.add('hidden');
+      document.getElementById('app-section').classList.remove('hidden');
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      location.reload();
+    }
+
+    // Check if already logged in
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) showApp();
+    });
   </script>
 </body>
 </html>
