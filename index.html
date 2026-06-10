@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,7 +18,7 @@
     .tagline { font-size: 26px; color: #ffd700; margin-bottom: 30px; }
     p { font-size: 20px; max-width: 600px; margin: 15px auto; }
     button {
-      margin-top: 40px;
+      margin: 30px 10px;
       padding: 15px 40px;
       font-size: 20px;
       background: #ffd700;
@@ -28,20 +27,39 @@
       border-radius: 50px;
       cursor: pointer;
     }
+    input {
+      padding: 15px;
+      font-size: 18px;
+      width: 80%;
+      max-width: 400px;
+      margin: 10px auto;
+      border-radius: 50px;
+      border: none;
+    }
   </style>
 </head>
 <body>
   <h1>🔥 EmberCalls</h1>
   <p class="tagline">Private Desires. Premium Earnings.</p>
-  <p><strong>This website is for adults 18+ only.</strong></p>
-  <p>Premium 1-on-1 adult video calls coming soon...</p>
-  
-  <button onclick="enterSite()">I am 18 or older - Enter</button>
+  <p><strong>18+ Only • Premium 1-on-1 Adult Video Calls</strong></p>
+  <p>Creators keep more money. Fans get better private experiences.</p>
+
+  <input type="email" id="email" placeholder="Enter your email for early access">
+  <br>
+  <button onclick="joinWaitlist()">Join Waiting List</button>
+  <button onclick="enterSite()">Enter Site</button>
 
   <script>
+    function joinWaitlist() {
+      const email = document.getElementById('email').value;
+      if (email) {
+        alert("Thank you! You've been added to the waiting list 🔥\n\nWe'll notify you when EmberCalls launches.");
+      } else {
+        alert("Please enter your email");
+      }
+    }
     function enterSite() {
-      alert("Welcome to EmberCalls 🔥\n\nThe full app is being built. Creators can already sign up soon!");
-      // Later we will hide content until they confirm age
+      alert("Welcome to EmberCalls! 🔥\n\nThe full app is being built. More features coming soon.");
     }
   </script>
 </body>
