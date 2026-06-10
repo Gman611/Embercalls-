@@ -10,8 +10,7 @@
     h1 { font-size:48px; color:#ffd700; }
     .tagline { font-size:24px; color:#ffd700; margin:20px 0; }
     input, button { padding:15px; margin:10px; width:80%; max-width:400px; border-radius:50px; font-size:18px; }
-    button { background:#ffd700; color:#2a0000; border:none; cursor:pointer; }
-    .hidden { display:none; }
+    button { background:#ffd700; color:#2a0000; border:none; cursor:pointer; font-weight:bold; }
   </style>
 </head>
 <body>
@@ -21,14 +20,14 @@
   <div id="auth-section">
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Password">
-    <br>
+    <br><br>
     <button onclick="signUp()">Sign Up as Creator</button>
     <button onclick="signIn()">Sign In</button>
   </div>
 
-  <div id="app-section" class="hidden">
-    <h2>Welcome to EmberCalls!</h2>
-    <p>You are logged in.</p>
+  <div id="app-section" style="display:none;">
+    <h2>Welcome!</h2>
+    <p>You are logged in. More features coming soon.</p>
     <button onclick="logout()">Logout</button>
   </div>
 
@@ -40,35 +39,36 @@
     async function signUp() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      if (!email || !password) return alert("Fill email and password");
+      if (!email || !password) return alert("Please fill email and password");
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) alert(error.message);
-      else alert("Account created! Check your email to confirm.");
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: { emailRedirectTo: window.location.href }
+      });
+
+      if (error) {
+        alert("Error: " + error.message);
+      } else {
+        alert("Account created! Please check your email (" + email + ") and click the confirmation link.");
+      }
     }
 
     async function signIn() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) alert(error.message);
-      else showApp();
+      if (error) alert("Sign in failed: " + error.message);
+      else {
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('app-section').style.display = 'block';
+      }
     }
 
-    function showApp() {
-      document.getElementById('auth-section').classList.add('hidden');
-      document.getElementById('app-section').classList.remove('hidden');
-    }
-
-    async function logout() {
-      await supabase.auth.signOut();
+    function logout() {
+      supabase.auth.signOut();
       location.reload();
     }
-
-    // Check if already logged in
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) showApp();
-    });
   </script>
 </body>
 </html>
