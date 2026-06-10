@@ -4,63 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EmberCalls - Premium Adult Video Calls</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body {
-      margin: 0;
-      padding: 40px 20px;
-      background: linear-gradient(135deg, #2a0000, #4a0000, #1a0000);
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      min-height: 100vh;
-    }
-    h1 {
-      font-size: 52px;
-      color: #ffd700;
-      margin: 20px 0 10px;
-    }
-    .tagline {
-      font-size: 26px;
-      color: #ffd700;
-      margin-bottom: 30px;
-    }
-    p {
-      font-size: 20px;
-      max-width: 600px;
-      margin: 15px auto;
-    }
-    button {
-      margin: 15px 10px;
-      padding: 18px 40px;
-      font-size: 20px;
-      background: #ffd700;
-      color: #2a0000;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      font-weight: bold;
-      width: 80%;
-      max-width: 400px;
-    }
-    button:hover {
-      background: #ffed4a;
-    }
+    body { margin:0; padding:20px; background:linear-gradient(135deg,#2a0000,#4a0000,#1a0000); color:white; font-family:Arial,sans-serif; text-align:center; min-height:100vh; }
+    h1 { font-size:42px; color:#ffd700; }
+    button { padding:15px 30px; margin:10px; font-size:18px; background:#ffd700; color:#2a0000; border:none; border-radius:50px; cursor:pointer; width:80%; max-width:400px; }
+    input { padding:15px; margin:10px; width:80%; max-width:400px; border-radius:50px; }
+    .section { display:none; }
+    .active { display:block; }
   </style>
 </head>
 <body>
   <h1>🔥 EmberCalls</h1>
-  <p class="tagline">Private Desires. Premium Earnings.</p>
-  
-  <p><strong>18+ Only • Private 1-on-1 Adult Video Calls</strong></p>
-  <p>Creators keep 75-78% of every minute.<br>Fans get high-quality private experiences.</p>
-  
-  <button onclick="window.location.href='https://wa.me/27791308270?text=Hi%2C%20I%20want%20to%20join%20as%20a%20Creator%20on%20EmberCalls'">Join as Creator</button>
-  
-  <button onclick="window.location.href='https://wa.me/27791308270?text=Hi%2C%20I%20want%20to%20book%20a%20private%20call'">Book a Private Call as Fan</button>
+  <p id="status">Loading...</p>
 
-  <p style="margin-top: 60px; font-size: 18px; opacity: 0.9;">
-    Early access platform.<br>
-    Message us on WhatsApp to get started immediately.
-  </p>
-</body>
-</html>
+  <!-- Auth Screen -->
+  <div id="auth" class="section active">
+    <input type="email" id="email" placeholder="Email" value="gerriekayser17@gmail.com">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="signUp()">Sign Up as Creator</button>
+    <button onclick="signIn()">Sign In</button>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" class="section">
+    <p>Welcome, <span id="username">User</span>!</p>
+    <p>Minutes left: <strong id="minutes">0</strong></p>
+
+    <button onclick="addMinutes()">Buy Minutes (R50 = 10 min)</button>
+    <button onclick="showCreators()">Browse Creators</button>
+    <button onclick="startCall()">Start Simulated Call</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Creators List -->
+  <div id="creators-list" class="section">
+    <h2>Available Creators</h2>
+    <button onclick="bookCall(1)">Creator
