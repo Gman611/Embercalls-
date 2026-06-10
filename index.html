@@ -4,118 +4,238 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EmberCalls - Premium Adult Video Calls</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { margin:0; padding:20px; background:linear-gradient(135deg,#2a0000,#4a0000,#1a0000); color:white; font-family:Arial,sans-serif; text-align:center; min-height:100vh; }
-    h1 { font-size:42px; color:#ffd700; }
-    button { padding:15px 30px; margin:10px; font-size:18px; background:#ffd700; color:#2a0000; border:none; border-radius:50px; cursor:pointer; width:80%; max-width:400px; }
-    input { padding:15px; margin:10px; width:80%; max-width:400px; border-radius:50px; }
-    .section { display:none; }
-    .active { display:block; }
+    body {
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #2a0000, #4a0000, #1a0000);
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      min-height: 100vh;
+    }
+    h1 { font-size: 42px; color: #ffd700; margin: 10px 0; }
+    .tagline { font-size: 22px; color: #ffd700; }
+    button {
+      padding: 16px 30px;
+      margin: 12px;
+      font-size: 18px;
+      background: #ffd700;
+      color: #2a0000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      width: 85%;
+      max-width: 380px;
+      font-weight: bold;
+    }
+    input {
+      padding: 15px;
+      margin: 10px;
+      width: 85%;
+      max-width: 380px;
+      border-radius: 50px;
+      font-size: 18px;
+      border: 2px solid #ffd700;
+    }
+    .section { display: none; }
+    .active { display: block; }
+    .wallet { font-size: 28px; color: #ffd700; margin: 15px 0; }
+    .creator-card {
+      background: #3a0000;
+      margin: 15px auto;
+      padding: 20px;
+      border-radius: 20px;
+      max-width: 380px;
+    }
+    #call-screen {
+      background: #1a0000;
+      padding: 40px 20px;
+      border-radius: 20px;
+      max-width: 400px;
+      margin: 20px auto;
+    }
+    .timer { font-size: 48px; color: #ffd700; margin: 20px 0; }
   </style>
 </head>
 <body>
+
   <h1>🔥 EmberCalls</h1>
-  <p id="status">Loading...</p>
+  <p class="tagline">Private Desires. Premium Earnings.</p>
 
   <!-- Auth Screen -->
-  <div id="auth" class="section active">
+  <div id="auth-screen" class="section active">
     <input type="email" id="email" placeholder="Email" value="gerriekayser17@gmail.com">
     <input type="password" id="password" placeholder="Password">
-    <button onclick="signUp()">Sign Up as Creator</button>
+    <button onclick="signUp()">Sign Up as Creator / Fan</button>
     <button onclick="signIn()">Sign In</button>
   </div>
 
-  <!-- Main App -->
-  <div id="app" class="section">
-    <p>Welcome, <span id="username">User</span>!</p>
-    <p>Minutes left: <strong id="minutes">0</strong></p>
+  <!-- Main Dashboard -->
+  <div id="dashboard" class="section">
+    <p>Welcome back!</p>
+    <div class="wallet">Minutes Left: <span id="minutes">30</span></div>
 
-    <button onclick="addMinutes()">Buy Minutes (R50 = 10 min)</button>
+    <button onclick="showPayment()">Buy More Minutes</button>
     <button onclick="showCreators()">Browse Creators</button>
-    <button onclick="startCall()">Start Simulated Call</button>
+    <button onclick="startSimulatedCall()">Start Simulated Call</button>
     <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- Creators List -->
-  <div id="creators-list" class="section">
+  <!-- Payment Screen -->
+  <div id="payment-screen" class="section">
+    <h2>Buy Minutes</h2>
+    <p>R50 = 10 minutes</p>
+    <button onclick="buyMinutes(50, 10)">Pay R50 (10 min)</button>
+    <button onclick="buyMinutes(100, 25)">Pay R100 (25 min)</button>
+    <button onclick="buyMinutes(200, 60)">Pay R200 (60 min)</button>
+    <button onclick="backToDashboard()">Back</button>
+  </div>
+
+  <!-- Creators Screen -->
+  <div id="creators-screen" class="section">
     <h2>Available Creators</h2>
-    <button onclick="bookCall(1)">Creator A - R100/min</button>
-    <button onclick="bookCall(2)">Creator B - R80/min</button>
+    
+    <div class="creator-card">
+      <h3>SexyMia 🔥</h3>
+      <p>R120 per minute</p>
+      <button onclick="bookCall('SexyMia', 120)">Book Call</button>
+    </div>
+    
+    <div class="creator-card">
+      <h3>HotJade 💎</h3>
+      <p>R95 per minute</p>
+      <button onclick="bookCall('HotJade', 95)">Book Call</button>
+    </div>
+    
+    <button onclick="backToDashboard()">Back to Dashboard</button>
+  </div>
+
+  <!-- Video Call Screen -->
+  <div id="call-screen" class="section">
+    <h2>🔴 Live Video Call</h2>
+    <p id="call-with">With: </p>
+    <div class="timer" id="timer">05:00</div>
+    <p>Minutes will be deducted automatically</p>
+    <button onclick="endCall()">End Call</button>
   </div>
 
   <script>
-    let currentUser = { minutes: 30, role: "fan" };
-    let balance = 30; // minutes
+    let minutes = 30;
+    let currentCall = null;
+    let timerInterval = null;
 
-    function updateUI() {
-      document.getElementById('minutes').textContent = balance;
+    function updateMinutes() {
+      document.getElementById('minutes').textContent = minutes;
     }
 
     function signUp() {
-      alert("Account created! (Simulation)\nYou are now a Creator.");
-      document.getElementById('auth').classList.remove('active');
-      document.getElementById('app').classList.add('active');
-      updateUI();
+      alert("Account created successfully! Welcome to EmberCalls 🔥");
+      document.getElementById('auth-screen').classList.remove('active');
+      document.getElementById('dashboard').classList.add('active');
+      updateMinutes();
     }
 
     function signIn() {
-      alert("Signed in successfully! (Simulation)");
-      document.getElementById('auth').classList.remove('active');
-      document.getElementById('app').classList.add('active');
-      updateUI();
+      alert("Signed in successfully!");
+      document.getElementById('auth-screen').classList.remove('active');
+      document.getElementById('dashboard').classList.add('active');
+      updateMinutes();
     }
 
-    function addMinutes() {
-      const amount = prompt("How much do you want to pay? (R50 = 10 minutes)", "50");
-      if (amount) {
-        balance += 10;
-        alert(`Payment received! R${amount} added.\nYou now have ${balance} minutes.`);
-        updateUI();
-        // In real version, this would link to PayFast / bank
+    function showPayment() {
+      document.getElementById('dashboard').classList.remove('active');
+      document.getElementById('payment-screen').classList.add('active');
+    }
+
+    function buyMinutes(amount, mins) {
+      const confirmed = confirm(`Send R${amount} to:\n\nBank: Capitec\nAccount Number: 0791308270\nReference: EmberCalls + your email\n\nAfter payment, click OK and I will add your minutes.`);
+      if (confirmed) {
+        minutes += mins;
+        alert(`Thank you! R\( {amount} received.\n \){mins} minutes added to your account.`);
+        updateMinutes();
+        backToDashboard();
       }
     }
 
     function showCreators() {
-      document.getElementById('app').classList.remove('active');
-      document.getElementById('creators-list').classList.add('active');
+      document.getElementById('dashboard').classList.remove('active');
+      document.getElementById('creators-screen').classList.add('active');
     }
 
-    function bookCall(creator) {
-      const minutes = parseInt(prompt("How many minutes do you want to call? (You have " + balance + ")", "5"));
-      if (minutes && minutes <= balance) {
-        balance -= minutes;
-        alert(`Call booked with Creator ${creator} for ${minutes} minutes!\nTimer will start.`);
-        updateUI();
-        setTimeout(() => startCall(), 1000);
+    function bookCall(creatorName, rate) {
+      const mins = parseInt(prompt(`How many minutes do you want with ${creatorName}? (You have ${minutes} minutes)`, "10"));
+      if (mins && mins <= minutes) {
+        minutes -= mins;
+        updateMinutes();
+        alert(`Call booked with ${creatorName} for ${mins} minutes!`);
+        startLiveCall(creatorName, mins);
       } else {
-        alert("Not enough minutes or invalid amount.");
+        alert("Not enough minutes or invalid number.");
       }
     }
 
-    function startCall() {
-      const duration = parseInt(prompt("Call duration in minutes?", "5"));
-      if (duration) {
-        alert(`🔴 Video Call Started!\nTimer running for ${duration} minutes...`);
-        setTimeout(() => {
-          alert("Call ended. You earned simulation credits.");
-        }, 5000);
+    function startLiveCall(creatorName, mins) {
+      document.getElementById('creators-screen').classList.remove('active');
+      document.getElementById('call-screen').classList.add('active');
+      document.getElementById('call-with').innerHTML = `With: <strong>${creatorName}</strong>`;
+      
+      let remaining = mins * 60;
+      document.getElementById('timer').innerHTML = formatTime(remaining);
+
+      timerInterval = setInterval(() => {
+        remaining--;
+        document.getElementById('timer').innerHTML = formatTime(remaining);
+        
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          alert("Call time finished!");
+          endCall();
+        }
+      }, 1000);
+    }
+
+    function formatTime(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      return `\( {min.toString().padStart(2, '0')}: \){sec.toString().padStart(2, '0')}`;
+    }
+
+    function startSimulatedCall() {
+      const mins = parseInt(prompt("How many minutes for this test call?", "5"));
+      if (mins && mins <= minutes) {
+        minutes -= mins;
+        updateMinutes();
+        startLiveCall("Test Creator", mins);
+      } else {
+        alert("Not enough minutes.");
       }
+    }
+
+    function endCall() {
+      clearInterval(timerInterval);
+      document.getElementById('call-screen').classList.remove('active');
+      document.getElementById('dashboard').classList.add('active');
+      alert("Call ended. Thank you for using EmberCalls!");
+    }
+
+    function backToDashboard() {
+      document.getElementById('payment-screen').classList.remove('active');
+      document.getElementById('creators-screen').classList.remove('active');
+      document.getElementById('dashboard').classList.add('active');
     }
 
     function logout() {
       location.reload();
     }
 
-    // Auto start in demo mode
-    window.onload = () => {
-      document.getElementById('status').style.display = 'none';
-      // For demo, auto show app
+    // Auto-load dashboard for demo
+    window.onload = function() {
       setTimeout(() => {
-        document.getElementById('auth').classList.remove('active');
-        document.getElementById('app').classList.add('active');
-        updateUI();
-      }, 800);
+        document.getElementById('auth-screen').classList.remove('active');
+        document.getElementById('dashboard').classList.add('active');
+        updateMinutes();
+      }, 600);
     };
   </script>
 </body>
