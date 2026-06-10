@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,28 +15,34 @@
       text-align: center;
       min-height: 100vh;
     }
-    h1 {
-      font-size: 52px;
-      color: #ffd700;
-      margin: 20px 0 10px;
-    }
-    .tagline {
-      font-size: 26px;
-      color: #ffd700;
-      margin-bottom: 30px;
-    }
-    p {
+    h1 { font-size: 52px; color: #ffd700; margin: 20px 0 10px; }
+    .tagline { font-size: 26px; color: #ffd700; margin-bottom: 30px; }
+    p { font-size: 20px; max-width: 600px; margin: 15px auto; }
+    button {
+      margin-top: 40px;
+      padding: 15px 40px;
       font-size: 20px;
-      max-width: 600px;
-      margin: 15px auto;
+      background: #ffd700;
+      color: #2a0000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <h1>🔥 EmberCalls</h1>
   <p class="tagline">Private Desires. Premium Earnings.</p>
-  <p>Premium 1-on-1 adult video calls are coming very soon...</p>
-  <p><strong>Creators keep more. Fans get better experiences.</strong></p>
-  <p style="margin-top: 80px; font-size: 18px;">Stay tuned 🔥</p>
+  <p><strong>This website is for adults 18+ only.</strong></p>
+  <p>Premium 1-on-1 adult video calls coming soon...</p>
+  
+  <button onclick="enterSite()">I am 18 or older - Enter</button>
+
+  <script>
+    function enterSite() {
+      alert("Welcome to EmberCalls 🔥\n\nThe full app is being built. Creators can already sign up soon!");
+      // Later we will hide content until they confirm age
+    }
+  </script>
 </body>
 </html>
