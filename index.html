@@ -3,111 +3,202 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EmberCalls - Live Adult Video Calls</title>
+  <title>EmberCalls - Live Adult Video</title>
   <style>
-    body { margin:0; padding:0; background:#1a0000; color:white; font-family:Arial,sans-serif; }
-    .header { background:#2a0000; padding:15px; text-align:center; }
-    h1 { color:#ffd700; margin:0; }
-    .container { display:flex; flex-direction:column; height:100vh; }
-    .main { flex:1; display:flex; }
-    .video-area { flex:2; background:#000; position:relative; display:flex; align-items:center; justify-content:center; }
-    .chat { flex:1; background:#2a0000; display:flex; flex-direction:column; }
-    .messages { flex:1; padding:15px; overflow-y:auto; }
-    .message { margin:8px 0; padding:8px; border-radius:10px; background:#3a0000; }
-    .input-area { padding:10px; background:#1a0000; }
-    input { width:70%; padding:12px; border-radius:30px; border:none; }
-    button { padding:12px 20px; background:#ffd700; color:#2a0000; border:none; border-radius:30px; font-weight:bold; }
-    .tip-btn { background:#ff00aa; color:white; padding:8px 16px; margin:5px; border-radius:20px; }
-    .live-dot { color:#ff0000; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: #0a0000;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+    }
+    .header {
+      background: #1a0000;
+      padding: 10px;
+      text-align: center;
+      border-bottom: 2px solid #ffd700;
+    }
+    h1 { color: #ffd700; font-size: 28px; }
+    .main {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+    .video-area {
+      flex: 3;
+      background: #000;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .video-placeholder {
+      font-size: 120px;
+      opacity: 0.3;
+    }
+    .live-badge {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #ff0000;
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      animation: pulse 2s infinite;
+    }
+    .chat-area {
+      flex: 1.2;
+      background: #1f001f;
+      display: flex;
+      flex-direction: column;
+      border-left: 2px solid #ffd700;
+    }
+    .chat-header {
+      background: #2a0000;
+      padding: 12px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background: #140014;
+    }
+    .message {
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 12px;
+      background: #2a002a;
+      font-size: 15px;
+    }
+    .tip { background: #ff00aa; color: white; }
+    .input-area {
+      padding: 12px;
+      background: #1a001a;
+      display: flex;
+    }
+    input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 30px;
+      border: none;
+      margin-right: 8px;
+    }
+    button {
+      padding: 12px 20px;
+      background: #ffd700;
+      color: #2a0000;
+      border: none;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1a0000;
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      border-top: 2px solid #ffd700;
+    }
+    .bottom-bar button {
+      flex: 1;
+      max-width: 180px;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <h1>🔥 EmberCalls Live</h1>
-    <p>Private Adult Video Calls &amp; Live Shows</p>
+    <h1>🔥 EmberCalls LIVE</h1>
+    <p>Private Adult Video Calls &amp; Shows</p>
   </div>
 
-  <div class="container">
-    <div class="main">
-      <!-- Video Area -->
-      <div class="video-area">
-        <div style="text-align:center; color:#ffd700;">
-          <div style="font-size:80px;">📹</div>
-          <h2><span class="live-dot">●</span> LIVE with <span id="current-creator">SexyMia</span></h2>
-          <p id="timer" style="font-size:28px; margin:15px 0;">00:00</p>
-          <button onclick="sendTip(50)">Tip R50</button>
-          <button onclick="sendTip(100)">Tip R100</button>
-          <button onclick="sendTip(200)">Tip R200</button>
-        </div>
-      </div>
-
-      <!-- Chat -->
-      <div class="chat">
-        <div class="messages" id="chat-messages">
-          <div class="message"><strong>SexyMia:</strong> Hey baby 😘 What do you want to see?</div>
-          <div class="message"><strong>Fan123:</strong> Take it off 🔥</div>
-        </div>
-        
-        <div class="input-area">
-          <input type="text" id="chat-input" placeholder="Type a message or tip...">
-          <button onclick="sendMessage()">Send</button>
-        </div>
-      </div>
+  <div class="main">
+    <!-- Video Area -->
+    <div class="video-area">
+      <div class="live-badge">● LIVE</div>
+      <div class="video-placeholder">📹</div>
+      <h2 style="color:#ffd700; margin-top:20px;">With <span id="performer">SexyMia</span></h2>
+      <p id="timer" style="font-size:32px; color:#ffd700; margin:15px 0;">00:00</p>
     </div>
 
-    <!-- Bottom Controls -->
-    <div style="background:#2a0000; padding:15px; text-align:center;">
-      <button onclick="startPrivateCall()">Start Private 1-on-1 Call</button>
-      <button onclick="buyMinutes()">Buy Minutes (R50 = 10min)</button>
-      <button onclick="logout()">Logout</button>
+    <!-- Chat Area -->
+    <div class="chat-area">
+      <div class="chat-header">Live Chat</div>
+      <div class="messages" id="messages"></div>
+      
+      <div class="input-area">
+        <input type="text" id="chatInput" placeholder="Send message or tip...">
+        <button onclick="sendChat()">Send</button>
+      </div>
     </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <button onclick="sendTip(50)">Tip R50</button>
+    <button onclick="sendTip(100)">Tip R100</button>
+    <button onclick="startPrivateCall()">Private Call</button>
+    <button onclick="buyMinutes()">Buy Minutes</button>
   </div>
 
   <script>
-    let minutes = 45;
-    let callTimer = null;
+    // Fake messages
+    const fakeMessages = [
+      "Wow you're so hot 🔥",
+      "Take it off please",
+      "Tip sent!",
+      "Love this show",
+      "More ass pls"
+    ];
 
-    function updateMinutes() {
-      // Could show in header if wanted
+    function addMessage(text, isTip = false) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${isTip ? 'tip' : ''}`;
+      msgDiv.innerHTML = text;
+      document.getElementById('messages').appendChild(msgDiv);
+      document.getElementById('messages').scrollTop = 999999;
     }
 
-    function sendTip(amount) {
-      if (minutes >= amount/10) {
-        minutes -= amount/10;
-        alert(`💰 Tip R${amount} sent! Creator received it.`);
-      } else {
-        alert("Not enough minutes. Buy more first.");
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      if (input.value.trim()) {
+        addMessage(`<strong>You:</strong> ${input.value}`);
+        input.value = '';
       }
     }
 
-    function sendMessage() {
-      const input = document.getElementById('chat-input');
-      if (input.value.trim() === "") return;
-      
-      const msg = document.createElement('div');
-      msg.className = 'message';
-      msg.innerHTML = `<strong>You:</strong> ${input.value}`;
-      document.getElementById('chat-messages').appendChild(msg);
-      document.getElementById('chat-messages').scrollTop = 9999;
-      input.value = "";
+    function sendTip(amount) {
+      addMessage(`<strong>You tipped R${amount} 💰</strong>`, true);
+      alert(`Tip of R${amount} sent to performer! Thank you.`);
     }
 
     function startPrivateCall() {
-      alert("🔴 Starting private 1-on-1 call...\n\nYour minutes will be deducted live.");
-      const duration = 300; // 5 minutes demo
-      let timeLeft = duration;
+      alert("🔴 Starting Private 1-on-1 Call...\n\nMinutes will be deducted live.");
+      let time = 300; // 5 minutes demo
+      const timerEl = document.getElementById('timer');
       
-      if (callTimer) clearInterval(callTimer);
-      
-      callTimer = setInterval(() => {
-        timeLeft--;
-        document.getElementById('timer').textContent = `\( {Math.floor(timeLeft/60)}: \){(timeLeft%60).toString().padStart(2,'0')}`;
+      const interval = setInterval(() => {
+        time--;
+        const min = Math.floor(time / 60);
+        const sec = time % 60;
+        timerEl.textContent = `\( {min}: \){sec < 10 ? '0' : ''}${sec}`;
         
-        if (timeLeft <= 0) {
-          clearInterval(callTimer);
-          alert("Call ended. Thank you!");
+        if (time <= 0) {
+          clearInterval(interval);
+          alert("Private call ended. Thank you!");
         }
       }, 1000);
     }
@@ -115,30 +206,26 @@
     function buyMinutes() {
       const amount = prompt("How much do you want to pay? (R50 = 10 minutes)", "100");
       if (amount) {
-        const minsAdded = Math.floor(amount / 5);
-        minutes += minsAdded;
-        alert(`Payment of R\( {amount} received!\n \){minsAdded} minutes added.\n\nSend money to: 079 130 8270 (Capitec)`);
+        alert(`Please send R${amount} to:\n\n079 130 8270 (Capitec)\nReference: EmberCalls + your name\n\nAfter payment tell me and I'll add your minutes.`);
       }
     }
 
-    function logout() {
-      if (confirm("Logout?")) location.reload();
-    }
-
-    // Auto demo messages
+    // Auto fake chat
     setInterval(() => {
-      const messages = ["Damn you're hot 🔥", "More please!", "Tip sent!"];
-      const randomMsg = document.createElement('div');
-      randomMsg.className = 'message';
-      randomMsg.innerHTML = `<strong>Fan${Math.floor(Math.random()*99)}:</strong> ${messages[Math.floor(Math.random()*messages.length)]}`;
-      document.getElementById('chat-messages').appendChild(randomMsg);
-      document.getElementById('chat-messages').scrollTop = 9999;
-    }, 8000);
+      const msg = fakeMessages[Math.floor(Math.random() * fakeMessages.length)];
+      addMessage(`<strong>Fan${Math.floor(Math.random()*999)}:</strong> ${msg}`);
+    }, 7000);
 
-    // Keyboard support for chat
-    document.getElementById('chat-input').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') sendMessage();
+    // Enter key support
+    document.getElementById('chatInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendChat();
     });
+
+    // Initial messages
+    window.onload = () => {
+      addMessage("<strong>SexyMia:</strong> Hey guys 😘 What do you want to see today?");
+      addMessage("<strong>Fan45:</strong> You look amazing!");
+    };
   </script>
 </body>
 </html>
