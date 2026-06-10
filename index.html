@@ -151,4 +151,28 @@
     function registerModel() {
       const name = document.getElementById('mname').value;
       if (name) {
-        alert(`✅ Application
+        alert(`✅ Application received for ${name}!\nWe will contact you on WhatsApp soon.`);
+        showSection('home');
+      } else {
+        alert("Please enter your stage name");
+      }
+    }
+
+    function startPrivateCall() {
+      alert("🔴 Starting Private 1-on-1 Call...\n\nReal video is active.");
+    }
+
+    function processPayment(amount) {
+      alert(`Please send R${amount} to 079 130 8270 (Capitec)\nReference: EmberCalls + your email\n\nThen click "I Have Paid"`);
+    }
+
+    function confirmPayment() {
+      const mins = Math.floor(Math.random() * 20) + 10;
+      minutesBalance += mins;
+      alert(`✅ Payment Confirmed!\n\n${mins} minutes added automatically to your account.\nCurrent balance: ${minutesBalance} minutes`);
+    }
+
+    window.onload = () => showSection('home');
+  </script>
+</body>
+</html>
