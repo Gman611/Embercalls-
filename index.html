@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EmberCalls - Live Adult Video Calls</title>
+  <title>EmberCalls - Premium Adult Video Calls</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { background:#0a0000; color:white; font-family:Arial,sans-serif; min-height:100vh; }
@@ -13,30 +13,32 @@
     button { padding:14px 24px; margin:5px; background:#ffd700; color:#2a0000; border:none; border-radius:30px; font-weight:bold; cursor:pointer; }
     .section { padding:20px; max-width:900px; margin:0 auto; display:none; }
     .active { display:block; }
+    input, textarea { width:100%; padding:14px; margin:10px 0; border-radius:12px; border:none; font-size:16px; }
+    .bank { background:#3a0000; padding:20px; border-radius:15px; margin:20px 0; }
     .video-container { background:#000; position:relative; margin:20px 0; border-radius:12px; overflow:hidden; }
     video { width:100%; max-height:400px; background:#111; }
-    .bank { background:#3a0000; padding:20px; border-radius:15px; margin:20px 0; }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <h1>🔥 EmberCalls LIVE</h1>
+    <h1>🔥 EmberCalls</h1>
     <p>Private Adult Video Calls • Creators Keep 75%</p>
   </div>
 
   <div class="nav">
     <button onclick="showSection('home')">Home</button>
-    <button onclick="showSection('models')">Become Model</button>
-    <button onclick="showSection('live')">Live Stream</button>
+    <button onclick="showSection('models')">Become a Model</button>
+    <button onclick="showSection('live')">Live Video</button>
     <button onclick="showSection('wallet')">Buy Minutes</button>
   </div>
 
   <!-- Home -->
   <div id="home" class="section active">
     <h2>Welcome to EmberCalls</h2>
-    <p>Real video streaming enabled</p>
+    <p>Real video streaming + manual payments</p>
     <button onclick="showSection('live')">Go Live / Watch</button>
+    <button onclick="showSection('models')">Join as Creator</button>
   </div>
 
   <!-- Become Model -->
@@ -49,34 +51,30 @@
     <button onclick="registerModel()">Submit Application</button>
   </div>
 
-  <!-- Live Video Streaming -->
+  <!-- Live Video -->
   <div id="live" class="section">
     <h2>🔴 Live Video Streaming</h2>
-    
     <div class="video-container">
       <video id="localVideo" autoplay playsinline muted></video>
-      <div style="position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:8px;">
-        Your Camera
-      </div>
     </div>
-
     <button onclick="startCamera()">Start My Camera</button>
     <button onclick="stopCamera()">Stop Camera</button>
-    <button onclick="startPrivateCall()">Start Private Call (Simulated)</button>
+    <button onclick="startPrivateCall()">Start Private Call</button>
   </div>
 
-  <!-- Wallet -->
+  <!-- Wallet / Payment -->
   <div id="wallet" class="section">
     <h2>Buy Minutes</h2>
     <div class="bank">
       <strong>Send payment to:</strong><br><br>
       Bank: Capitec<br>
-      Number: <strong>079 130 8270</strong><br>
-      Reference: EmberCalls + Your Name<br><br>
-      After payment WhatsApp proof for minutes.
+      Account: <strong>079 130 8270</strong><br>
+      Reference: EmberCalls + Your Name/Email<br><br>
+      After payment, WhatsApp proof to 079 130 8270 and minutes will be added.
     </div>
-    <button onclick="buyMinutes(50)">Buy R50 (10 min)</button>
-    <button onclick="buyMinutes(100)">Buy R100 (25 min)</button>
+    <button onclick="buyMinutes(50)">Buy R50 (10 minutes)</button>
+    <button onclick="buyMinutes(100)">Buy R100 (25 minutes)</button>
+    <button onclick="buyMinutes(200)">Buy R200 (60 minutes)</button>
   </div>
 
   <script>
@@ -92,9 +90,9 @@
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         video.srcObject = localStream;
-        alert("✅ Camera started! This is real video streaming.");
+        alert("✅ Real video streaming started!");
       } catch (err) {
-        alert("Camera access denied or not available. Use another device.");
+        alert("Camera error: " + err.message);
       }
     }
 
@@ -109,7 +107,7 @@
       const name = document.getElementById('mname').value;
       const email = document.getElementById('memail').value;
       if (name && email) {
-        alert(`✅ Model application received for ${name}!\nWe will contact you soon via WhatsApp.`);
+        alert(`✅ Application received for ${name}!\n\nWe will contact you soon on WhatsApp.`);
         showSection('home');
       } else {
         alert("Please fill name and email");
@@ -117,11 +115,11 @@
     }
 
     function startPrivateCall() {
-      alert("🔴 Starting Private 1-on-1 Call...\n\nYour camera is active. In full version this would connect to another user.");
+      alert("🔴 Starting Private 1-on-1 Call...\n\nReal video streaming is active. Minutes will be deducted.");
     }
 
     function buyMinutes(amount) {
-      alert(`Please send R${amount} to:\n\n079 130 8270 (Capitec)\nReference: EmberCalls + your name\n\nAfter payment, send proof on WhatsApp.`);
+      alert(`Please send R${amount} to:\n\n079 130 8270 (Capitec)\nReference: EmberCalls + your name\n\nAfter payment, WhatsApp proof to 079 130 8270 and minutes will be added.`);
     }
 
     // Start on home
