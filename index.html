@@ -3,229 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EmberCalls - Live Adult Video</title>
+  <title>EmberCalls - Premium Adult Video Calls</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      background: #0a0000;
-      color: white;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-      height: 100vh;
-    }
-    .header {
-      background: #1a0000;
-      padding: 10px;
-      text-align: center;
-      border-bottom: 2px solid #ffd700;
-    }
-    h1 { color: #ffd700; font-size: 28px; }
-    .main {
-      display: flex;
-      height: calc(100vh - 60px);
-    }
-    .video-area {
-      flex: 3;
-      background: #000;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-    }
-    .video-placeholder {
-      font-size: 120px;
-      opacity: 0.3;
-    }
-    .live-badge {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: #ff0000;
-      color: white;
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 14px;
-      animation: pulse 2s infinite;
-    }
-    .chat-area {
-      flex: 1.2;
-      background: #1f001f;
-      display: flex;
-      flex-direction: column;
-      border-left: 2px solid #ffd700;
-    }
-    .chat-header {
-      background: #2a0000;
-      padding: 12px;
-      text-align: center;
-      font-weight: bold;
-    }
-    .messages {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      background: #140014;
-    }
-    .message {
-      margin: 8px 0;
-      padding: 10px;
-      border-radius: 12px;
-      background: #2a002a;
-      font-size: 15px;
-    }
-    .tip { background: #ff00aa; color: white; }
-    .input-area {
-      padding: 12px;
-      background: #1a001a;
-      display: flex;
-    }
-    input {
-      flex: 1;
-      padding: 12px;
-      border-radius: 30px;
-      border: none;
-      margin-right: 8px;
-    }
-    button {
-      padding: 12px 20px;
-      background: #ffd700;
-      color: #2a0000;
-      border: none;
-      border-radius: 30px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .bottom-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #1a0000;
-      padding: 12px;
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      border-top: 2px solid #ffd700;
-    }
-    .bottom-bar button {
-      flex: 1;
-      max-width: 180px;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
+    body { background:#0a0000; color:white; font-family:Arial,sans-serif; min-height:100vh; }
+    .header { background:#1a0000; padding:15px; text-align:center; border-bottom:3px solid #ffd700; }
+    h1 { color:#ffd700; font-size:32px; }
+    .nav { background:#2a0000; padding:10px; display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+    button { padding:14px 24px; margin:5px; background:#ffd700; color:#2a0000; border:none; border-radius:30px; font-weight:bold; cursor:pointer; }
+    .section { padding:20px; max-width:900px; margin:0 auto; display:none; }
+    .active { display:block; }
+    input, textarea { width:100%; padding:14px; margin:10px 0; border-radius:12px; border:none; font-size:16px; }
+    .bank { background:#3a0000; padding:20px; border-radius:15px; margin:20px 0; }
+    .live { background:#000; height:320px; display:flex; align-items:center; justify-content:center; font-size:120px; position:relative; }
+    .live-dot { position:absolute; top:20px; left:20px; background:#ff0000; color:white; padding:6px 14px; border-radius:20px; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <h1>🔥 EmberCalls LIVE</h1>
-    <p>Private Adult Video Calls &amp; Shows</p>
+    <h1>🔥 EmberCalls</h1>
+    <p>Private 1-on-1 Adult Video Calls • Creators Keep 75%</p>
   </div>
 
-  <div class="main">
-    <!-- Video Area -->
-    <div class="video-area">
-      <div class="live-badge">● LIVE</div>
-      <div class="video-placeholder">📹</div>
-      <h2 style="color:#ffd700; margin-top:20px;">With <span id="performer">SexyMia</span></h2>
-      <p id="timer" style="font-size:32px; color:#ffd700; margin:15px 0;">00:00</p>
-    </div>
-
-    <!-- Chat Area -->
-    <div class="chat-area">
-      <div class="chat-header">Live Chat</div>
-      <div class="messages" id="messages"></div>
-      
-      <div class="input-area">
-        <input type="text" id="chatInput" placeholder="Send message or tip...">
-        <button onclick="sendChat()">Send</button>
-      </div>
-    </div>
+  <div class="nav">
+    <button onclick="showSection('home')">Home</button>
+    <button onclick="showSection('models')">Become a Model</button>
+    <button onclick="showSection('live')">Live Shows</button>
+    <button onclick="showSection('wallet')">Buy Minutes</button>
   </div>
 
-  <!-- Bottom Bar -->
-  <div class="bottom-bar">
+  <!-- Home -->
+  <div id="home" class="section active">
+    <h2>Welcome to EmberCalls</h2>
+    <p><strong>18+ Only</strong> • Premium private video calls</p>
+    <button onclick="showSection('live')">Watch Live</button>
+    <button onclick="showSection('models')">Join as Creator / Model</button>
+  </div>
+
+  <!-- Become Model -->
+  <div id="models" class="section">
+    <h2>Become a Creator / Model</h2>
+    <input type="text" id="mname" placeholder="Stage Name">
+    <input type="email" id="memail" placeholder="Email">
+    <textarea id="mbio" rows="4" placeholder="Bio + what you offer"></textarea>
+    <input type="text" id="mrate" placeholder="Rate per minute (e.g. R120)">
+    <button onclick="registerModel()">Submit Application</button>
+  </div>
+
+  <!-- Live -->
+  <div id="live" class="section">
+    <div class="live">
+      <div class="live-dot">● LIVE</div>
+      <div>📹</div>
+    </div>
+    <h2>With SexyMia 🔥</h2>
     <button onclick="sendTip(50)">Tip R50</button>
     <button onclick="sendTip(100)">Tip R100</button>
-    <button onclick="startPrivateCall()">Private Call</button>
-    <button onclick="buyMinutes()">Buy Minutes</button>
+    <button onclick="startCall()">Start Private Call</button>
+  </div>
+
+  <!-- Wallet / Payment -->
+  <div id="wallet" class="section">
+    <h2>Buy Minutes</h2>
+    <div class="bank">
+      <strong>Send money to:</strong><br><br>
+      Bank: Capitec<br>
+      Number: <strong>079 130 8270</strong><br>
+      Reference: EmberCalls + Your Name/Email<br><br>
+      After payment, message us on WhatsApp with proof.
+    </div>
+    <button onclick="buyMinutes(50)">Buy R50 (10 min)</button>
+    <button onclick="buyMinutes(100)">Buy R100 (25 min)</button>
+    <button onclick="buyMinutes(200)">Buy R200 (60 min)</button>
   </div>
 
   <script>
-    // Fake messages
-    const fakeMessages = [
-      "Wow you're so hot 🔥",
-      "Take it off please",
-      "Tip sent!",
-      "Love this show",
-      "More ass pls"
-    ];
-
-    function addMessage(text, isTip = false) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${isTip ? 'tip' : ''}`;
-      msgDiv.innerHTML = text;
-      document.getElementById('messages').appendChild(msgDiv);
-      document.getElementById('messages').scrollTop = 999999;
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
     }
 
-    function sendChat() {
-      const input = document.getElementById('chatInput');
-      if (input.value.trim()) {
-        addMessage(`<strong>You:</strong> ${input.value}`);
-        input.value = '';
+    function registerModel() {
+      const name = document.getElementById('mname').value;
+      const email = document.getElementById('memail').value;
+      if (name && email) {
+        alert(`✅ Application received for ${name}!\n\nWe will review and contact you on WhatsApp soon.`);
+        showSection('home');
+      } else {
+        alert("Please fill name and email");
       }
     }
 
     function sendTip(amount) {
-      addMessage(`<strong>You tipped R${amount} 💰</strong>`, true);
-      alert(`Tip of R${amount} sent to performer! Thank you.`);
+      alert(`💰 R${amount} tip sent! Thank you.`);
     }
 
-    function startPrivateCall() {
-      alert("🔴 Starting Private 1-on-1 Call...\n\nMinutes will be deducted live.");
-      let time = 300; // 5 minutes demo
-      const timerEl = document.getElementById('timer');
-      
-      const interval = setInterval(() => {
-        time--;
-        const min = Math.floor(time / 60);
-        const sec = time % 60;
-        timerEl.textContent = `\( {min}: \){sec < 10 ? '0' : ''}${sec}`;
-        
-        if (time <= 0) {
-          clearInterval(interval);
-          alert("Private call ended. Thank you!");
-        }
-      }, 1000);
+    function startCall() {
+      alert("🔴 Starting private 1-on-1 call with SexyMia...\n\nMinutes will be deducted live.");
     }
 
-    function buyMinutes() {
-      const amount = prompt("How much do you want to pay? (R50 = 10 minutes)", "100");
-      if (amount) {
-        alert(`Please send R${amount} to:\n\n079 130 8270 (Capitec)\nReference: EmberCalls + your name\n\nAfter payment tell me and I'll add your minutes.`);
-      }
+    function buyMinutes(amount) {
+      alert(`Please send R${amount} to 079 130 8270 (Capitec)\nReference: EmberCalls + your name\n\nAfter payment, WhatsApp us the proof and we will add your minutes.`);
     }
 
-    // Auto fake chat
-    setInterval(() => {
-      const msg = fakeMessages[Math.floor(Math.random() * fakeMessages.length)];
-      addMessage(`<strong>Fan${Math.floor(Math.random()*999)}:</strong> ${msg}`);
-    }, 7000);
-
-    // Enter key support
-    document.getElementById('chatInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendChat();
-    });
-
-    // Initial messages
-    window.onload = () => {
-      addMessage("<strong>SexyMia:</strong> Hey guys 😘 What do you want to see today?");
-      addMessage("<strong>Fan45:</strong> You look amazing!");
-    };
+    // Start on home
+    window.onload = () => showSection('home');
   </script>
 </body>
 </html>
