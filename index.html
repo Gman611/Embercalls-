@@ -3,240 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EmberCalls - Premium Adult Video Calls</title>
+  <title>EmberCalls - Live Adult Video Calls</title>
   <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      background: linear-gradient(135deg, #2a0000, #4a0000, #1a0000);
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      min-height: 100vh;
-    }
-    h1 { font-size: 42px; color: #ffd700; margin: 10px 0; }
-    .tagline { font-size: 22px; color: #ffd700; }
-    button {
-      padding: 16px 30px;
-      margin: 12px;
-      font-size: 18px;
-      background: #ffd700;
-      color: #2a0000;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      width: 85%;
-      max-width: 380px;
-      font-weight: bold;
-    }
-    input {
-      padding: 15px;
-      margin: 10px;
-      width: 85%;
-      max-width: 380px;
-      border-radius: 50px;
-      font-size: 18px;
-      border: 2px solid #ffd700;
-    }
-    .section { display: none; }
-    .active { display: block; }
-    .wallet { font-size: 28px; color: #ffd700; margin: 15px 0; }
-    .creator-card {
-      background: #3a0000;
-      margin: 15px auto;
-      padding: 20px;
-      border-radius: 20px;
-      max-width: 380px;
-    }
-    #call-screen {
-      background: #1a0000;
-      padding: 40px 20px;
-      border-radius: 20px;
-      max-width: 400px;
-      margin: 20px auto;
-    }
-    .timer { font-size: 48px; color: #ffd700; margin: 20px 0; }
+    body { margin:0; padding:0; background:#1a0000; color:white; font-family:Arial,sans-serif; }
+    .header { background:#2a0000; padding:15px; text-align:center; }
+    h1 { color:#ffd700; margin:0; }
+    .container { display:flex; flex-direction:column; height:100vh; }
+    .main { flex:1; display:flex; }
+    .video-area { flex:2; background:#000; position:relative; display:flex; align-items:center; justify-content:center; }
+    .chat { flex:1; background:#2a0000; display:flex; flex-direction:column; }
+    .messages { flex:1; padding:15px; overflow-y:auto; }
+    .message { margin:8px 0; padding:8px; border-radius:10px; background:#3a0000; }
+    .input-area { padding:10px; background:#1a0000; }
+    input { width:70%; padding:12px; border-radius:30px; border:none; }
+    button { padding:12px 20px; background:#ffd700; color:#2a0000; border:none; border-radius:30px; font-weight:bold; }
+    .tip-btn { background:#ff00aa; color:white; padding:8px 16px; margin:5px; border-radius:20px; }
+    .live-dot { color:#ff0000; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
   </style>
 </head>
 <body>
 
-  <h1>🔥 EmberCalls</h1>
-  <p class="tagline">Private Desires. Premium Earnings.</p>
-
-  <!-- Auth Screen -->
-  <div id="auth-screen" class="section active">
-    <input type="email" id="email" placeholder="Email" value="gerriekayser17@gmail.com">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="signUp()">Sign Up as Creator / Fan</button>
-    <button onclick="signIn()">Sign In</button>
+  <div class="header">
+    <h1>🔥 EmberCalls Live</h1>
+    <p>Private Adult Video Calls &amp; Live Shows</p>
   </div>
 
-  <!-- Main Dashboard -->
-  <div id="dashboard" class="section">
-    <p>Welcome back!</p>
-    <div class="wallet">Minutes Left: <span id="minutes">30</span></div>
+  <div class="container">
+    <div class="main">
+      <!-- Video Area -->
+      <div class="video-area">
+        <div style="text-align:center; color:#ffd700;">
+          <div style="font-size:80px;">📹</div>
+          <h2><span class="live-dot">●</span> LIVE with <span id="current-creator">SexyMia</span></h2>
+          <p id="timer" style="font-size:28px; margin:15px 0;">00:00</p>
+          <button onclick="sendTip(50)">Tip R50</button>
+          <button onclick="sendTip(100)">Tip R100</button>
+          <button onclick="sendTip(200)">Tip R200</button>
+        </div>
+      </div>
 
-    <button onclick="showPayment()">Buy More Minutes</button>
-    <button onclick="showCreators()">Browse Creators</button>
-    <button onclick="startSimulatedCall()">Start Simulated Call</button>
-    <button onclick="logout()">Logout</button>
-  </div>
-
-  <!-- Payment Screen -->
-  <div id="payment-screen" class="section">
-    <h2>Buy Minutes</h2>
-    <p>R50 = 10 minutes</p>
-    <button onclick="buyMinutes(50, 10)">Pay R50 (10 min)</button>
-    <button onclick="buyMinutes(100, 25)">Pay R100 (25 min)</button>
-    <button onclick="buyMinutes(200, 60)">Pay R200 (60 min)</button>
-    <button onclick="backToDashboard()">Back</button>
-  </div>
-
-  <!-- Creators Screen -->
-  <div id="creators-screen" class="section">
-    <h2>Available Creators</h2>
-    
-    <div class="creator-card">
-      <h3>SexyMia 🔥</h3>
-      <p>R120 per minute</p>
-      <button onclick="bookCall('SexyMia', 120)">Book Call</button>
+      <!-- Chat -->
+      <div class="chat">
+        <div class="messages" id="chat-messages">
+          <div class="message"><strong>SexyMia:</strong> Hey baby 😘 What do you want to see?</div>
+          <div class="message"><strong>Fan123:</strong> Take it off 🔥</div>
+        </div>
+        
+        <div class="input-area">
+          <input type="text" id="chat-input" placeholder="Type a message or tip...">
+          <button onclick="sendMessage()">Send</button>
+        </div>
+      </div>
     </div>
-    
-    <div class="creator-card">
-      <h3>HotJade 💎</h3>
-      <p>R95 per minute</p>
-      <button onclick="bookCall('HotJade', 95)">Book Call</button>
-    </div>
-    
-    <button onclick="backToDashboard()">Back to Dashboard</button>
-  </div>
 
-  <!-- Video Call Screen -->
-  <div id="call-screen" class="section">
-    <h2>🔴 Live Video Call</h2>
-    <p id="call-with">With: </p>
-    <div class="timer" id="timer">05:00</div>
-    <p>Minutes will be deducted automatically</p>
-    <button onclick="endCall()">End Call</button>
+    <!-- Bottom Controls -->
+    <div style="background:#2a0000; padding:15px; text-align:center;">
+      <button onclick="startPrivateCall()">Start Private 1-on-1 Call</button>
+      <button onclick="buyMinutes()">Buy Minutes (R50 = 10min)</button>
+      <button onclick="logout()">Logout</button>
+    </div>
   </div>
 
   <script>
-    let minutes = 30;
-    let currentCall = null;
-    let timerInterval = null;
+    let minutes = 45;
+    let callTimer = null;
 
     function updateMinutes() {
-      document.getElementById('minutes').textContent = minutes;
+      // Could show in header if wanted
     }
 
-    function signUp() {
-      alert("Account created successfully! Welcome to EmberCalls 🔥");
-      document.getElementById('auth-screen').classList.remove('active');
-      document.getElementById('dashboard').classList.add('active');
-      updateMinutes();
-    }
-
-    function signIn() {
-      alert("Signed in successfully!");
-      document.getElementById('auth-screen').classList.remove('active');
-      document.getElementById('dashboard').classList.add('active');
-      updateMinutes();
-    }
-
-    function showPayment() {
-      document.getElementById('dashboard').classList.remove('active');
-      document.getElementById('payment-screen').classList.add('active');
-    }
-
-    function buyMinutes(amount, mins) {
-      const confirmed = confirm(`Send R${amount} to:\n\nBank: Capitec\nAccount Number: 0791308270\nReference: EmberCalls + your email\n\nAfter payment, click OK and I will add your minutes.`);
-      if (confirmed) {
-        minutes += mins;
-        alert(`Thank you! R\( {amount} received.\n \){mins} minutes added to your account.`);
-        updateMinutes();
-        backToDashboard();
-      }
-    }
-
-    function showCreators() {
-      document.getElementById('dashboard').classList.remove('active');
-      document.getElementById('creators-screen').classList.add('active');
-    }
-
-    function bookCall(creatorName, rate) {
-      const mins = parseInt(prompt(`How many minutes do you want with ${creatorName}? (You have ${minutes} minutes)`, "10"));
-      if (mins && mins <= minutes) {
-        minutes -= mins;
-        updateMinutes();
-        alert(`Call booked with ${creatorName} for ${mins} minutes!`);
-        startLiveCall(creatorName, mins);
+    function sendTip(amount) {
+      if (minutes >= amount/10) {
+        minutes -= amount/10;
+        alert(`💰 Tip R${amount} sent! Creator received it.`);
       } else {
-        alert("Not enough minutes or invalid number.");
+        alert("Not enough minutes. Buy more first.");
       }
     }
 
-    function startLiveCall(creatorName, mins) {
-      document.getElementById('creators-screen').classList.remove('active');
-      document.getElementById('call-screen').classList.add('active');
-      document.getElementById('call-with').innerHTML = `With: <strong>${creatorName}</strong>`;
+    function sendMessage() {
+      const input = document.getElementById('chat-input');
+      if (input.value.trim() === "") return;
       
-      let remaining = mins * 60;
-      document.getElementById('timer').innerHTML = formatTime(remaining);
+      const msg = document.createElement('div');
+      msg.className = 'message';
+      msg.innerHTML = `<strong>You:</strong> ${input.value}`;
+      document.getElementById('chat-messages').appendChild(msg);
+      document.getElementById('chat-messages').scrollTop = 9999;
+      input.value = "";
+    }
 
-      timerInterval = setInterval(() => {
-        remaining--;
-        document.getElementById('timer').innerHTML = formatTime(remaining);
+    function startPrivateCall() {
+      alert("🔴 Starting private 1-on-1 call...\n\nYour minutes will be deducted live.");
+      const duration = 300; // 5 minutes demo
+      let timeLeft = duration;
+      
+      if (callTimer) clearInterval(callTimer);
+      
+      callTimer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = `\( {Math.floor(timeLeft/60)}: \){(timeLeft%60).toString().padStart(2,'0')}`;
         
-        if (remaining <= 0) {
-          clearInterval(timerInterval);
-          alert("Call time finished!");
-          endCall();
+        if (timeLeft <= 0) {
+          clearInterval(callTimer);
+          alert("Call ended. Thank you!");
         }
       }, 1000);
     }
 
-    function formatTime(seconds) {
-      const min = Math.floor(seconds / 60);
-      const sec = seconds % 60;
-      return `\( {min.toString().padStart(2, '0')}: \){sec.toString().padStart(2, '0')}`;
-    }
-
-    function startSimulatedCall() {
-      const mins = parseInt(prompt("How many minutes for this test call?", "5"));
-      if (mins && mins <= minutes) {
-        minutes -= mins;
-        updateMinutes();
-        startLiveCall("Test Creator", mins);
-      } else {
-        alert("Not enough minutes.");
+    function buyMinutes() {
+      const amount = prompt("How much do you want to pay? (R50 = 10 minutes)", "100");
+      if (amount) {
+        const minsAdded = Math.floor(amount / 5);
+        minutes += minsAdded;
+        alert(`Payment of R\( {amount} received!\n \){minsAdded} minutes added.\n\nSend money to: 079 130 8270 (Capitec)`);
       }
     }
 
-    function endCall() {
-      clearInterval(timerInterval);
-      document.getElementById('call-screen').classList.remove('active');
-      document.getElementById('dashboard').classList.add('active');
-      alert("Call ended. Thank you for using EmberCalls!");
-    }
-
-    function backToDashboard() {
-      document.getElementById('payment-screen').classList.remove('active');
-      document.getElementById('creators-screen').classList.remove('active');
-      document.getElementById('dashboard').classList.add('active');
-    }
-
     function logout() {
-      location.reload();
+      if (confirm("Logout?")) location.reload();
     }
 
-    // Auto-load dashboard for demo
-    window.onload = function() {
-      setTimeout(() => {
-        document.getElementById('auth-screen').classList.remove('active');
-        document.getElementById('dashboard').classList.add('active');
-        updateMinutes();
-      }, 600);
-    };
+    // Auto demo messages
+    setInterval(() => {
+      const messages = ["Damn you're hot 🔥", "More please!", "Tip sent!"];
+      const randomMsg = document.createElement('div');
+      randomMsg.className = 'message';
+      randomMsg.innerHTML = `<strong>Fan${Math.floor(Math.random()*99)}:</strong> ${messages[Math.floor(Math.random()*messages.length)]}`;
+      document.getElementById('chat-messages').appendChild(randomMsg);
+      document.getElementById('chat-messages').scrollTop = 9999;
+    }, 8000);
+
+    // Keyboard support for chat
+    document.getElementById('chat-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') sendMessage();
+    });
   </script>
 </body>
 </html>
