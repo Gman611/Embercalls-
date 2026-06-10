@@ -8,27 +8,24 @@
   <style>
     body { margin:0; padding:40px 20px; background:linear-gradient(135deg,#2a0000,#4a0000,#1a0000); color:white; font-family:Arial,sans-serif; text-align:center; min-height:100vh; }
     h1 { font-size:48px; color:#ffd700; }
-    .tagline { font-size:24px; color:#ffd700; margin:20px 0; }
     input, button { padding:15px; margin:10px; width:80%; max-width:400px; border-radius:50px; font-size:18px; }
     button { background:#ffd700; color:#2a0000; border:none; cursor:pointer; font-weight:bold; }
+    #status { margin:20px; color:yellow; }
   </style>
 </head>
 <body>
   <h1>🔥 EmberCalls</h1>
-  <p class="tagline">Private Desires. Premium Earnings.</p>
+  <p>Private Desires. Premium Earnings.</p>
 
   <div id="auth-section">
-    <input type="email" id="email" placeholder="Email" value="gerriekayser17@gmail.com">
-    <input type="password" id="password" placeholder="Password">
+    <input type="email" id="email" placeholder="Your email" value="gerriekayser17@gmail.com">
+    <input type="password" id="password" placeholder="Password (min 6 chars)">
     <br><br>
     <button onclick="signUp()">Sign Up as Creator</button>
     <button onclick="signIn()">Sign In</button>
   </div>
 
-  <div id="success" style="display:none; margin-top:30px;">
-    <h2>Account Created!</h2>
-    <p>Check your email for confirmation link.</p>
-  </div>
+  <div id="status"></div>
 
   <script>
     const supabaseUrl = 'https://xxcidnwdmnhjyibbizve.supabase.co';
@@ -36,33 +33,20 @@
     const supabase = Supabase.createClient(supabaseUrl, supabaseKey);
 
     async function signUp() {
+      const status = document.getElementById('status');
+      status.innerHTML = "Creating account...";
+
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      
+
       if (!email || !password) {
-        alert("Please enter email and password");
+        status.innerHTML = "Please fill email and password";
         return;
       }
 
-      alert("Creating account... Please wait");
-
-      const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-      });
+      const { data, error } = await supabase.auth.signUp({ email, password });
 
       if (error) {
-        alert("Error: " + error.message);
+        status.innerHTML = "Error: " + error.message;
       } else {
-        document.getElementById('auth-section').style.display = 'none';
-        document.getElementById('success').style.display = 'block';
-        alert("Success! Check your email (" + email + ") for confirmation link.");
-      }
-    }
-
-    async function signIn() {
-      alert("Sign in feature coming soon. Use Sign Up first.");
-    }
-  </script>
-</body>
-</html>
+        status.innerHTML = "✅ Account created!<
