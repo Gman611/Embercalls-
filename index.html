@@ -40,4 +40,83 @@
   <!-- Creators List -->
   <div id="creators-list" class="section">
     <h2>Available Creators</h2>
-    <button onclick="bookCall(1)">Creator
+    <button onclick="bookCall(1)">Creator A - R100/min</button>
+    <button onclick="bookCall(2)">Creator B - R80/min</button>
+  </div>
+
+  <script>
+    let currentUser = { minutes: 30, role: "fan" };
+    let balance = 30; // minutes
+
+    function updateUI() {
+      document.getElementById('minutes').textContent = balance;
+    }
+
+    function signUp() {
+      alert("Account created! (Simulation)\nYou are now a Creator.");
+      document.getElementById('auth').classList.remove('active');
+      document.getElementById('app').classList.add('active');
+      updateUI();
+    }
+
+    function signIn() {
+      alert("Signed in successfully! (Simulation)");
+      document.getElementById('auth').classList.remove('active');
+      document.getElementById('app').classList.add('active');
+      updateUI();
+    }
+
+    function addMinutes() {
+      const amount = prompt("How much do you want to pay? (R50 = 10 minutes)", "50");
+      if (amount) {
+        balance += 10;
+        alert(`Payment received! R${amount} added.\nYou now have ${balance} minutes.`);
+        updateUI();
+        // In real version, this would link to PayFast / bank
+      }
+    }
+
+    function showCreators() {
+      document.getElementById('app').classList.remove('active');
+      document.getElementById('creators-list').classList.add('active');
+    }
+
+    function bookCall(creator) {
+      const minutes = parseInt(prompt("How many minutes do you want to call? (You have " + balance + ")", "5"));
+      if (minutes && minutes <= balance) {
+        balance -= minutes;
+        alert(`Call booked with Creator ${creator} for ${minutes} minutes!\nTimer will start.`);
+        updateUI();
+        setTimeout(() => startCall(), 1000);
+      } else {
+        alert("Not enough minutes or invalid amount.");
+      }
+    }
+
+    function startCall() {
+      const duration = parseInt(prompt("Call duration in minutes?", "5"));
+      if (duration) {
+        alert(`🔴 Video Call Started!\nTimer running for ${duration} minutes...`);
+        setTimeout(() => {
+          alert("Call ended. You earned simulation credits.");
+        }, 5000);
+      }
+    }
+
+    function logout() {
+      location.reload();
+    }
+
+    // Auto start in demo mode
+    window.onload = () => {
+      document.getElementById('status').style.display = 'none';
+      // For demo, auto show app
+      setTimeout(() => {
+        document.getElementById('auth').classList.remove('active');
+        document.getElementById('app').classList.add('active');
+        updateUI();
+      }, 800);
+    };
+  </script>
+</body>
+</html>
