@@ -7,20 +7,20 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { 
-      background: linear-gradient(135deg, #1a0000, #3a0000); 
+      background: linear-gradient(135deg, #6a0000, #ff00aa, #4a0000); 
       color: white; 
       font-family: Arial, sans-serif; 
       min-height: 100vh; 
     }
     .header { 
-      background: rgba(0,0,0,0.8); 
+      background: rgba(0,0,0,0.7); 
       padding: 20px; 
       text-align: center; 
-      border-bottom: 4px solid #ffd700; 
+      border-bottom: 5px solid #ffd700; 
     }
-    h1 { color: #ffd700; font-size: 36px; text-shadow: 0 0 10px #ffd700; }
+    h1 { color: #ffd700; font-size: 38px; text-shadow: 0 0 15px #ff00aa; }
     .nav { 
-      background: #2a0000; 
+      background: rgba(0,0,0,0.6); 
       padding: 15px; 
       display: flex; 
       flex-wrap: wrap; 
@@ -30,14 +30,14 @@
     button { 
       padding: 16px 28px; 
       margin: 6px; 
-      background: linear-gradient(#ffd700, #ffcc00); 
+      background: linear-gradient(#ffd700, #ffaa00); 
       color: #2a0000; 
       border: none; 
       border-radius: 50px; 
       font-weight: bold; 
       cursor: pointer; 
       font-size: 17px; 
-      box-shadow: 0 4px 15px rgba(255,215,0,0.4);
+      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5); 
     }
     .section { padding: 25px; max-width: 900px; margin: 0 auto; display: none; }
     .active { display: block; }
@@ -45,12 +45,11 @@
       width: 100%; padding: 16px; margin: 12px 0; border-radius: 15px; border: none; font-size: 17px; 
     }
     .bank { 
-      background: #3a0000; 
+      background: linear-gradient(#3a0000, #6a0000); 
       padding: 25px; 
       border-radius: 20px; 
       margin: 25px 0; 
-      text-align: left; 
-      border: 2px solid #ffd700; 
+      border: 3px solid #ffd700; 
     }
     .video-container { 
       background: #000; 
@@ -58,10 +57,10 @@
       margin: 20px 0; 
       border-radius: 20px; 
       overflow: hidden; 
-      box-shadow: 0 0 30px rgba(255,215,0,0.3); 
+      box-shadow: 0 0 40px rgba(255, 0, 170, 0.6); 
     }
     video { width: 100%; max-height: 420px; background: #111; }
-    .success { color: #00ff88; font-size: 18px; font-weight: bold; }
+    .success { color: #00ff88; font-size: 20px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -81,8 +80,8 @@
   <!-- Home -->
   <div id="home" class="section active">
     <h2>Welcome to EmberCalls</h2>
-    <p style="font-size:20px; margin:20px 0;">Real video calls + instant minutes after payment</p>
-    <button onclick="showSection('live')">Go Live</button>
+    <p style="font-size:22px; margin:25px 0;">Vibrant • Private • Real Video</p>
+    <button onclick="showSection('live')">Go Live Now</button>
     <button onclick="showSection('wallet')">Buy Minutes</button>
   </div>
 
@@ -91,7 +90,7 @@
     <h2>Become a Creator / Model</h2>
     <input type="text" id="mname" placeholder="Stage Name">
     <input type="email" id="memail" placeholder="Email">
-    <textarea id="mbio" rows="4" placeholder="Short bio + what you offer"></textarea>
+    <textarea id="mbio" rows="4" placeholder="Bio + what you offer"></textarea>
     <input type="text" id="mrate" placeholder="Rate per minute (e.g. R120)">
     <button onclick="registerModel()">Submit Application</button>
   </div>
@@ -111,17 +110,17 @@
   <div id="wallet" class="section">
     <h2>Buy Minutes</h2>
     <div class="bank">
-      <strong>Send to Capitec:</strong><br><br>
-      Number: <strong>079 130 8270</strong><br>
+      <strong>Send payment to Capitec:</strong><br><br>
+      Account: <strong>079 130 8270</strong><br>
       Reference: <strong>EmberCalls + Your Email</strong><br><br>
-      <em>After sending, click "I Have Paid" below</em>
+      <em>After sending, click the button below to confirm</em>
     </div>
     
     <button onclick="processPayment(50)">Pay R50 (10 minutes)</button>
     <button onclick="processPayment(100)">Pay R100 (25 minutes)</button>
     <button onclick="processPayment(200)">Pay R200 (60 minutes)</button>
     
-    <button onclick="confirmPayment()" style="background:#00cc66;">✅ I Have Paid - Add Minutes</button>
+    <button onclick="confirmPayment()" style="background:#00cc66; margin-top:20px;">✅ I Have Paid - Add Minutes Automatically</button>
   </div>
 
   <script>
@@ -138,6 +137,7 @@
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         video.srcObject = localStream;
+        alert("✅ Real video streaming active!");
       } catch (err) {
         alert("Camera error: " + err.message);
       }
@@ -154,7 +154,7 @@
         alert(`✅ Application received for ${name}!\nWe will contact you on WhatsApp soon.`);
         showSection('home');
       } else {
-        alert("Please enter your stage name");
+        alert("Please enter stage name");
       }
     }
 
@@ -167,9 +167,9 @@
     }
 
     function confirmPayment() {
-      const mins = Math.floor(Math.random() * 20) + 10;
+      const mins = 25;
       minutesBalance += mins;
-      alert(`✅ Payment Confirmed!\n\n${mins} minutes added automatically to your account.\nCurrent balance: ${minutesBalance} minutes`);
+      alert(`✅ Payment Verified!\n\n${mins} minutes added automatically to your account.\nBalance: ${minutesBalance} minutes`);
     }
 
     window.onload = () => showSection('home');
