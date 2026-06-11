@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EmberCalls</title>
+</head>
+<body>
+  <h1>EmberCalls</h1>
+
+  <h2>Register</h2>
+  <input id="regEmail" placeholder="Email">
+  <input id="regPassword" type="password" placeholder="Password">
+  <button onclick="register()">Register</button>
+
+  <h2>Login</h2>
+  <input id="loginEmail" placeholder="Email">
+  <input id="loginPassword" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+
+  <h2>Create Creator</h2>
+  <input id="displayName" placeholder="Display name">
+  <input id="rate" type="number" placeholder="Rate per minute">
+  <button onclick="createCreator()">Create</button>
+
+  <h2>Creators</h2>
+  <button onclick="loadCreators()">Load Creators</button>
+  <div id="creators"></div>
+
+  <script>
+    let token = localStorage.getItem("token");
+
+    async function api(url, method = "GET", body = null) {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : ""
+        },
+        body: body ? JSON.stringify(body) : null
+      });
+
+      return res.json();
+    }
+
+    async function register() {
+      const data = await api("/api/register", "POST", {
+        email: regEmail.value,
+        password: regPassword.value
+      });
+
+      if (data.token) {
+        token = data.token;
+        localStorage.setItem("token", token);
+      }
+
+      alert(JSON.stringify(data));
+    }
+
+    async function login() {
+      const data = await api("/api/login", "POST", {
+        email: loginEmail.value,
+        password: loginPassword.value
+      });
+
+      if (data.token) {
+        token = data.token;
+        localStorage.setItem("token", token);
+      }
+
+      alert(JSON.stringify(data));
+    }
+
+    async function createCreator() {
+      const data = await api("/api/creator", "POST", {
+        displayName: displayName.value,
+        ratePerMinute: Number(rate.value)
+      });
+
+      alert(JSON.stringify(data));
+    }
+
+    async function loadCreators() {
+      const data = await api("/api/creators");
+
+      creators.innerHTML = "";
+
+      data.forEach(c => {
+        creators.innerHTML += `
+          <div>
+            <h3>${c.display_name}</h3>
+            <p>Rate: ${c.rate_per_minute}</p>
+            <button onclick="startCall(${c.id})">Start Call</button>
+          </div>
+        `;
+      });
+    }
+
+    async function startCall(creatorId) {
+      const data = await api("/api/start-call", "POST", { creatorId });
+
+      localStorage.setItem("roomId", data.roomId);
+      localStorage.setItem("sessionId", data.session.id);
+      localStorage.setItem("iceServers", JSON.stringify(data.iceServers));
+
+      window.location.href = "/call.html";
+    }
+  </script>
+</body>
+</html>
