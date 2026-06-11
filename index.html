@@ -44,6 +44,7 @@
     .active { display: block; }
     .video-container { background: #000; position: relative; margin: 20px 0; border-radius: 20px; overflow: hidden; box-shadow: 0 0 40px rgba(255,0,170,0.6); }
     video { width: 100%; max-height: 420px; background: #111; }
+    .bank { background: #3a0000; padding: 25px; border-radius: 20px; margin: 25px 0; border: 3px solid #ffd700; }
   </style>
 </head>
 <body>
@@ -63,7 +64,7 @@
   <!-- Home -->
   <div id="home" class="section active">
     <h2>Welcome to EmberCalls</h2>
-    <p style="font-size:22px; margin:25px 0;">Real Video Calls + Instant Payments via Yoco</p>
+    <p style="font-size:22px;">Real Video Calls + Yoco Payments</p>
     <button onclick="showSection('live')">Go Live</button>
     <button onclick="showSection('wallet')">Buy Minutes</button>
     <button onclick="showSection('models')">Join as Creator</button>
@@ -113,7 +114,7 @@
         video.srcObject = localStream;
         alert("✅ Camera started! Real video streaming active.");
       } catch (err) {
-        alert("Camera access denied.");
+        alert("Camera error: " + err.message);
       }
     }
 
@@ -125,7 +126,7 @@
     function registerModel() {
       const name = document.getElementById('mname').value;
       if (name) {
-        alert(`✅ Application received for ${name}!\n\nWe will review and contact you on WhatsApp (079 130 8270).`);
+        alert(`✅ Application received for ${name}!\nWe will contact you on WhatsApp (079 130 8270).`);
         showSection('home');
       } else {
         alert("Please enter stage name");
@@ -136,7 +137,7 @@
       alert("🔴 Starting Private 1-on-1 Call...\n\nUse the camera above. In full version this connects two users.");
     }
 
-    // Yoco Payment
+    // Yoco Payment (using your test key)
     function payWithYoco(amount) {
       const yoco = new YocoSDK({
         publicKey: "pk_test_c5d37cf8GNyWRdy7ecd4"
@@ -146,9 +147,9 @@
         amountInCents: amount * 100,
         currency: 'ZAR',
         name: 'EmberCalls',
-        description: `${amount} Minutes - Private Video Call Credits`,
+        description: `${amount} Minutes - Private Adult Video Call Credits`,
         onSuccess: (result) => {
-          alert(`✅ Payment Successful!\nTransaction ID: \( {result.id}\n \){amount} minutes added automatically!`);
+          alert(`✅ Payment Successful!\nTransaction ID: \( {result.id}\n \){amount} minutes added to your account!`);
         },
         onError: (error) => {
           alert("Payment failed: " + error.message);
