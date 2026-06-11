@@ -54,10 +54,7 @@ app.post("/api/register", async (req, res) => {
     const existing = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
     if (existing.rows.length > 0) return res.status(400).json({ error: "Email already exists" });
     const hash = await bcrypt.hash(password, 10);
-    const result = await pool.query(
-      "INSERT INTO users (email, password_hash, credits) VALUES ($1, $2, 0) RETURNING id, email, credits",
-      [email, hash]
-    );
+    const result = await pool.query("INSERT INTO users (email, password_hash, credits) VALUES ($1, $2, 0) RETURNING id, email, credits", [email, hash]);
     const user = result.rows[0];
     res.json({ success: true, token: createToken(user.id), user });
   } catch (err) {
@@ -99,10 +96,7 @@ app.post("/api/buy-credits-demo", auth, async (req, res) => {
 app.post("/api/creator", auth, async (req, res) => {
   try {
     const { displayName, bio, ratePerMinute } = req.body;
-    const result = await pool.query(
-      "INSERT INTO creators (user_id, display_name, bio, rate_per_minute) VALUES ($1, $2, $3, $4) RETURNING *",
-      [req.userId, displayName, bio || "", Number(ratePerMinute)]
-    );
+    const result = await pool.query("INSERT INTO creators (user_id, display_name, bio, rate_per_minute) VALUES ($1, $2, $3, $4) RETURNING *", [req.userId, displayName, bio || "", Number(ratePerMinute)]);
     res.json({ success: true, creator: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: "Could not create creator" });
@@ -138,12 +132,7 @@ app.post("/api/start-call", auth, async (req, res) => {
 app.post("/api/deduct-minute", auth, async (req, res) => {
   try {
     const { sessionId } = req.body;
-    const sessionRes = await pool.query(`
-      SELECT call_sessions.*, creators.rate_per_minute 
-      FROM call_sessions JOIN creators ON creators.id = call_sessions.creator_id 
-      WHERE call_sessions.id = $1 AND call_sessions.customer_id = $2 AND active = true`, 
-      [sessionId, req.userId]
-    );
+    const sessionRes = await pool.query(`SELECT call_sessions.*, creators.rate_per_minute FROM call_sessions JOIN creators ON creators.id = call_sessions.creator_id WHERE call_sessions.id = $1 AND call_sessions.customer_id = $2 AND active = true`, [sessionId, req.userId]);
     if (sessionRes.rows.length === 0) return res.status(404).json({ error: "Active session not found" });
     const session = sessionRes.rows[0];
     const userRes = await pool.query("SELECT credits FROM users WHERE id = $1", [req.userId]);
@@ -169,11 +158,11 @@ app.post("/api/end-call", auth, async (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  socket.on("join-room", (roomId) => socket.join(roomId));
+  socket.on("join-room", (roomId) => { socket.join(roomId); socket.to(roomId).emit("user-joined"); });
   socket.on("offer", (data) => socket.to(data.roomId).emit("offer", data.offer));
   socket.on("answer", (data) => socket.to(data.roomId).emit("answer", data.answer));
   socket.on("ice-candidate", (data) => socket.to(data.roomId).emit("ice-candidate", data.candidate));
-  socket.on("leave-room", (roomId) => socket.leave(roomId));
+  socket.on("leave-room", (roomId) => { socket.leave(roomId); socket.to(roomId).emit("user-left"); });
 });
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🔥 EmberCalls running on port ${PORT}`));
