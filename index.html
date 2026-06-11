@@ -3,257 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EmberCalls - Full Single-File Demo</title>
+    <title>EmberCalls</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #0f0000; color: #fff; margin: 0; padding: 20px; }
-        h1, h2 { color: #ff4444; }
-        input, textarea, button { 
-            display: block; margin: 10px 0; padding: 12px; width: 320px; 
-            border-radius: 6px; border: none; font-size: 16px;
-        }
-        button { background: #ff3b3b; color: white; cursor: pointer; font-weight: bold; }
+        body { font-family: Arial, sans-serif; background: #140000; color: white; padding: 20px; margin: 0; }
+        input, textarea, button { display: block; margin: 10px 0; padding: 12px; width: 300px; border-radius: 6px; }
+        button { background: #ff3b3b; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background: #ff5555; }
-        .card { background: #2a0000; padding: 15px; margin: 15px 0; border-radius: 10px; max-width: 420px; }
-        video { width: 48%; background: #000; margin: 8px; border-radius: 10px; border: 2px solid #ff3b3b; }
-        #status { color: #0f0; font-weight: bold; }
+        .card { background: #2a0000; padding: 15px; margin: 15px 0; border-radius: 10px; max-width: 400px; }
+        #appSection { display: none; }
     </style>
 </head>
 <body>
     <h1>🔥 EmberCalls</h1>
-    <div id="status">Server running on http://localhost:3000</div>
 
-    <!-- LOGIN / REGISTER -->
-    <h2>Register</h2>
-    <input id="regEmail" placeholder="Email" type="email">
-    <input id="regPassword" placeholder="Password" type="password">
-    <button onclick="register()">Register</button>
+    <div id="authSection">
+        <h2>Register</h2>
+        <input id="regEmail" placeholder="Email" type="email">
+        <input id="regPassword" placeholder="Password" type="password">
+        <button onclick="register()">Register</button>
 
-    <h2>Login</h2>
-    <input id="loginEmail" placeholder="Email" type="email">
-    <input id="loginPassword" placeholder="Password" type="password">
-    <button onclick="login()">Login</button>
-
-    <h2>Account</h2>
-    <button onclick="loadMe()">Refresh Account</button>
-    <p id="accountInfo">Not logged in</p>
-
-    <!-- BUY CREDITS -->
-    <h2>Buy Credits (Demo)</h2>
-    <button onclick="buyCredits('10min')">10 min — 85 credits</button>
-    <button onclick="buyCredits('60min')">60 min — 415 credits</button>
-    <button onclick="buyCredits('360min')">360 min — 1650 credits</button>
-
-    <!-- CREATE CREATOR -->
-    <h2>Create Creator Profile</h2>
-    <input id="displayName" placeholder="Display Name">
-    <textarea id="bio" placeholder="Bio"></textarea>
-    <input id="rate" placeholder="Rate per minute (credits)" type="number">
-    <button onclick="createCreator()">Become a Creator</button>
-
-    <!-- CREATORS LIST -->
-    <h2>Creators</h2>
-    <button onclick="loadCreators()">Load Creators</button>
-    <div id="creatorsList"></div>
-
-    <!-- CALL ROOM (hidden by default) -->
-    <div id="callRoom" style="display:none;">
-        <h1>🔴 Live Call Room</h1>
-        <video id="localVideo" autoplay muted playsinline></video>
-        <video id="remoteVideo" autoplay playsinline></video>
-        <br>
-        <button onclick="endCall()">End Call</button>
+        <h2>Login</h2>
+        <input id="loginEmail" placeholder="Email" type="email">
+        <input id="loginPassword" placeholder="Password" type="password">
+        <button onclick="login()">Login</button>
     </div>
 
-    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <div id="appSection">
+        <h2>Account</h2>
+        <p id="account"></p>
+        <button onclick="loadMe()">Refresh Account</button>
+        <button onclick="logout()">Logout</button>
+
+        <h2>Buy Credits (Demo)</h2>
+        <button onclick="buyCredits('10min')">10 min - 85 credits</button>
+        <button onclick="buyCredits('60min')">60 min - 415 credits</button>
+        <button onclick="buyCredits('360min')">360 min - 1650 credits</button>
+
+        <h2>Create Creator Profile</h2>
+        <input id="displayName" placeholder="Display Name">
+        <textarea id="bio" placeholder="Bio (optional)"></textarea>
+        <input id="rate" placeholder="Rate per minute (credits)" type="number">
+        <button onclick="createCreator()">Create Creator Profile</button>
+
+        <h2>Available Creators</h2>
+        <button onclick="loadCreators()">Load Creators</button>
+        <div id="creators"></div>
+    </div>
+
     <script>
-        // ====================== BACKEND SIMULATION (for demo) ======================
-        let users = JSON.parse(localStorage.getItem('demoUsers')) || [];
-        let creators = JSON.parse(localStorage.getItem('demoCreators')) || [];
-        let sessions = [];
-        let currentUser = null;
-        let token = localStorage.getItem('token');
-        let currentSessionId = null;
-        let currentRoomId = null;
-        let localStream = null;
-        let peerConnection = null;
-        let socket = null;
+        let token = localStorage.getItem("token");
 
-        function generateToken(userId) {
-            return "demo-token-" + userId + "-" + Date.now();
+        async function api(url, method = "GET", body = null) {
+            const headers = { "Content-Type": "application/json" };
+            if (token) headers.Authorization = `Bearer ${token}`;
+            const res = await fetch(url, {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : null
+            });
+            return res.json();
         }
 
-        function saveData() {
-            localStorage.setItem('demoUsers', JSON.stringify(users));
-            localStorage.setItem('demoCreators', JSON.stringify(creators));
-        }
-
-        // ====================== API FUNCTIONS ======================
-        async function apiCall(endpoint, method = "GET", body = null) {
-            if (!token && endpoint !== "/api/register" && endpoint !== "/api/login") {
-                alert("Please login first");
-                return { error: "Not authenticated" };
-            }
-
-            // Simulate delay
-            await new Promise(r => setTimeout(r, 300));
-
-            if (endpoint === "/api/register") {
-                const { email, password } = body;
-                if (users.find(u => u.email === email)) return { error: "Email already exists" };
-                const hash = password; // demo - no real bcrypt
-                const newUser = { id: users.length + 1, email, password_hash: hash, credits: 0 };
-                users.push(newUser);
-                saveData();
-                token = generateToken(newUser.id);
-                localStorage.setItem('token', token);
-                currentUser = newUser;
-                return { success: true, token, user: newUser };
-            }
-
-            if (endpoint === "/api/login") {
-                const { email, password } = body;
-                const user = users.find(u => u.email === email && u.password_hash === password);
-                if (!user) return { error: "Wrong email or password" };
-                token = generateToken(user.id);
-                localStorage.setItem('token', token);
-                currentUser = user;
-                return { success: true, token, user: { id: user.id, email: user.email, credits: user.credits } };
-            }
-
-            if (endpoint === "/api/me") {
-                return currentUser ? { id: currentUser.id, email: currentUser.email, credits: currentUser.credits } : { error: "Not logged in" };
-            }
-
-            if (endpoint === "/api/buy-credits-demo") {
-                const { packageName } = body;
-                const packages = { "10min": 85, "60min": 415, "360min": 1650 };
-                const amount = packages[packageName];
-                if (!amount) return { error: "Invalid package" };
-                currentUser.credits += amount;
-                saveData();
-                return { success: true, user: currentUser, message: "Demo credits added" };
-            }
-
-            if (endpoint === "/api/creator") {
-                const { displayName, bio, ratePerMinute } = body;
-                const newCreator = {
-                    id: creators.length + 1,
-                    user_id: currentUser.id,
-                    display_name: displayName,
-                    bio: bio,
-                    rate_per_minute: parseInt(ratePerMinute)
-                };
-                creators.push(newCreator);
-                saveData();
-                return { success: true, creator: newCreator };
-            }
-
-            if (endpoint === "/api/creators") {
-                return creators;
-            }
-
-            if (endpoint === "/api/start-call") {
-                const { creatorId } = body;
-                const creator = creators.find(c => c.id === creatorId);
-                if (!creator) return { error: "Creator not found" };
-                if (currentUser.credits < creator.rate_per_minute) return { error: "Not enough credits" };
-
-                const session = {
-                    id: sessions.length + 1,
-                    customer_id: currentUser.id,
-                    creator_id: creatorId,
-                    active: true
-                };
-                sessions.push(session);
-                currentSessionId = session.id;
-                currentRoomId = `room-${session.id}`;
-
-                return {
-                    success: true,
-                    session,
-                    roomId: currentRoomId,
-                    ratePerMinute: creator.rate_per_minute,
-                    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-                };
-            }
-
-            if (endpoint === "/api/deduct-minute") {
-                const { sessionId } = body;
-                const session = sessions.find(s => s.id === sessionId);
-                if (!session || !session.active) return { error: "Session not found" };
-
-                const creator = creators.find(c => c.id === session.creator_id);
-                if (currentUser.credits < creator.rate_per_minute) {
-                    session.active = false;
-                    return { error: "Not enough credits" };
-                }
-
-                currentUser.credits -= creator.rate_per_minute;
-                saveData();
-                return { success: true, user: currentUser };
-            }
-
-            if (endpoint === "/api/end-call") {
-                const { sessionId } = body;
-                const session = sessions.find(s => s.id === sessionId);
-                if (session) session.active = false;
-                return { success: true };
-            }
-
-            return { error: "Unknown endpoint" };
-        }
-
-        // ====================== FRONTEND FUNCTIONS ======================
         async function register() {
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-            const res = await apiCall("/api/register", "POST", { email, password });
-            alert(JSON.stringify(res, null, 2));
-            if (res.success) loadMe();
+            const data = await api("/api/register", "POST", {
+                email: document.getElementById("regEmail").value,
+                password: document.getElementById("regPassword").value
+            });
+            if (data.token) {
+                token = data.token;
+                localStorage.setItem("token", token);
+                showApp();
+            }
+            alert(JSON.stringify(data));
         }
 
         async function login() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const res = await apiCall("/api/login", "POST", { email, password });
-            alert(JSON.stringify(res, null, 2));
-            if (res.success) loadMe();
+            const data = await api("/api/login", "POST", {
+                email: document.getElementById("loginEmail").value,
+                password: document.getElementById("loginPassword").value
+            });
+            if (data.token) {
+                token = data.token;
+                localStorage.setItem("token", token);
+                showApp();
+            }
+            alert(JSON.stringify(data));
+        }
+
+        function showApp() {
+            document.getElementById("authSection").style.display = "none";
+            document.getElementById("appSection").style.display = "block";
+            loadMe();
+            loadCreators();
         }
 
         async function loadMe() {
-            const res = await apiCall("/api/me");
-            if (res.error) {
-                document.getElementById('accountInfo').innerHTML = "Not logged in";
-                return;
-            }
-            document.getElementById('accountInfo').innerHTML = `Email: \( {res.email} | Credits: <strong> \){res.credits}</strong>`;
+            const data = await api("/api/me");
+            document.getElementById("account").innerText = `Email: ${data.email || 'N/A'} | Credits: ${data.credits || 0}`;
         }
 
         async function buyCredits(packageName) {
-            const res = await apiCall("/api/buy-credits-demo", "POST", { packageName });
-            alert(JSON.stringify(res, null, 2));
+            const data = await api("/api/buy-credits-demo", "POST", { packageName });
+            alert(JSON.stringify(data));
             loadMe();
         }
 
         async function createCreator() {
-            const displayName = document.getElementById('displayName').value;
-            const bio = document.getElementById('bio').value;
-            const rate = document.getElementById('rate').value;
-            const res = await apiCall("/api/creator", "POST", { displayName, bio, ratePerMinute: rate });
-            alert(JSON.stringify(res, null, 2));
+            const data = await api("/api/creator", "POST", {
+                displayName: document.getElementById("displayName").value,
+                bio: document.getElementById("bio").value,
+                ratePerMinute: Number(document.getElementById("rate").value)
+            });
+            alert(JSON.stringify(data));
         }
 
         async function loadCreators() {
-            const data = await apiCall("/api/creators");
-            const container = document.getElementById('creatorsList');
+            const data = await api("/api/creators");
+            const container = document.getElementById("creators");
             container.innerHTML = "";
             data.forEach(c => {
-                const div = document.createElement('div');
+                const div = document.createElement("div");
                 div.className = "card";
                 div.innerHTML = `
                     <h3>${c.display_name}</h3>
                     <p>${c.bio || ''}</p>
-                    <p><strong>${c.rate_per_minute} credits/min</strong></p>
+                    <p><strong>${c.rate_per_minute} credits / min</strong></p>
                     <button onclick="startCall(${c.id})">Start Video Call</button>
                 `;
                 container.appendChild(div);
@@ -261,76 +135,24 @@
         }
 
         async function startCall(creatorId) {
-            const res = await apiCall("/api/start-call", "POST", { creatorId });
-            if (!res.success) {
-                alert(res.error || "Failed to start call");
+            const data = await api("/api/start-call", "POST", { creatorId });
+            if (!data.success) {
+                alert(JSON.stringify(data));
                 return;
             }
-
-            document.getElementById('callRoom').style.display = 'block';
-            document.querySelector('body').scrollIntoView({ behavior: "smooth" });
-
-            currentRoomId = res.roomId;
-            currentSessionId = res.session.id;
-
-            // Start WebRTC
-            await startWebRTC(res.iceServers);
+            localStorage.setItem("roomId", data.roomId);
+            localStorage.setItem("sessionId", data.session.id);
+            localStorage.setItem("iceServers", JSON.stringify(data.iceServers));
+            window.location.href = "call.html";
         }
 
-        // ====================== WEBRTC + SOCKET (DEMO) ======================
-        async function startWebRTC(iceServers) {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('localVideo').srcObject = localStream;
-
-                peerConnection = new RTCPeerConnection({ iceServers: iceServers || [{ urls: "stun:stun.l.google.com:19302" }] });
-
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
-                });
-
-                peerConnection.ontrack = (event) => {
-                    document.getElementById('remoteVideo').srcObject = event.streams[0];
-                };
-
-                // Simulate other user joining
-                setTimeout(() => {
-                    console.log("Simulated user joined");
-                }, 1500);
-
-                // Deduct every minute
-                setInterval(async () => {
-                    const res = await apiCall("/api/deduct-minute", "POST", { sessionId: currentSessionId });
-                    if (!res.success) {
-                        alert("Not enough credits - call ended");
-                        endCall();
-                    }
-                }, 60000);
-
-            } catch (err) {
-                console.error(err);
-                alert("Camera/Microphone access denied or not available.");
-            }
+        function logout() {
+            localStorage.removeItem("token");
+            location.reload();
         }
 
-        async function endCall() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            if (peerConnection) peerConnection.close();
-
-            await apiCall("/api/end-call", "POST", { sessionId: currentSessionId });
-
-            document.getElementById('callRoom').style.display = 'none';
-            document.getElementById('remoteVideo').srcObject = null;
-            loadMe();
-        }
-
-        // Auto load on start
-        window.onload = () => {
-            if (token) loadMe();
-            console.log("%cEmberCalls Full Demo Ready! (Single HTML File)", "color:#ff3b3b; font-size:16px");
-        };
+        // Auto login if token exists
+        if (token) showApp();
     </script>
 </body>
 </html>
