@@ -5,18 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EmberCalls - Call Room</title>
     <style>
-        body { background: #0a0000; color: white; font-family: Arial; text-align: center; margin: 0; padding: 10px; }
+        body { background: #0a0000; color: white; font-family: Arial; text-align: center; margin: 0; padding: 20px; }
         video { width: 45%; background: black; margin: 10px; border-radius: 10px; border: 2px solid #ff3b3b; }
-        button { padding: 15px 25px; background: #ff3b3b; color: white; border: none; margin: 10px; font-size: 16px; cursor: pointer; }
-        #status { margin: 15px; font-size: 18px; }
+        button { padding: 15px 30px; background: #ff3b3b; color: white; border: none; font-size: 18px; cursor: pointer; margin: 10px; }
+        #status { font-size: 20px; margin: 15px; }
     </style>
 </head>
 <body>
-    <h1>🔴 Live Call</h1>
-    <div id="status">Connecting...</div>
+    <h1>🔴 Live Call Room</h1>
+    <div id="status">Connecting to call...</div>
+    
     <video id="localVideo" autoplay muted playsinline></video>
     <video id="remoteVideo" autoplay playsinline></video>
-    <br>
+    <br><br>
     <button onclick="endCall()">End Call</button>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -34,7 +35,7 @@
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById("localVideo").srcObject = localStream;
 
-                peerConnection = new RTCPeerConnection({ iceServers });
+                peerConnection = new RTCPeerConnection({ iceServers: iceServers });
 
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
@@ -54,53 +55,56 @@
                     socket.emit("offer", { roomId, offer });
                 });
 
-                socket.on("offer", async offer => {
+                socket.on("offer", async (offer) => {
                     await peerConnection.setRemoteDescription(offer);
                     const answer = await peerConnection.createAnswer();
                     await peerConnection.setLocalDescription(answer);
                     socket.emit("answer", { roomId, answer });
                 });
 
-                socket.on("answer", async answer => {
+                socket.on("answer", async (answer) => {
                     await peerConnection.setRemoteDescription(answer);
                 });
 
-                socket.on("ice-candidate", async candidate => {
-                    try { await peerConnection.addIceCandidate(candidate); } catch (err) {}
+                socket.on("ice-candidate", async (data) => {
+                    try { await peerConnection.addIceCandidate(data.candidate); } catch (err) {}
                 });
 
-                socket.on("user-left", () => { alert("Other user left"); endCall(); });
+                socket.on("user-left", () => { alert("The other user left the call"); endCall(); });
 
                 setInterval(deductMinute, 60000);
-                document.getElementById("status").innerText = "Call Connected";
+                document.getElementById("status").innerText = "✅ Call Connected - Credits deducting every minute";
             } catch (err) {
                 console.error(err);
-                alert("Failed to start camera/mic");
+                alert("Could not access camera/microphone");
             }
         }
 
         async function deductMinute() {
             const res = await fetch("/api/deduct-minute", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify({ sessionId })
             });
             const data = await res.json();
             if (!data.success) {
-                alert(data.error || "Credits ended");
+                alert(data.error || "Not enough credits");
                 endCall();
             }
         }
 
         async function endCall() {
             socket.emit("leave-room", roomId);
-            if (localStream) localStream.getTracks().forEach(t => t.stop());
+            if (localStream) localStream.getTracks().forEach(track => track.stop());
             await fetch("/api/end-call", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify({ sessionId })
             });
-            window.location.href = "index.html";
+            window.location.href = "/";
         }
 
         startCall();
