@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmberCalls - Call Room</title>
+    <style>
+        body { background: #0a0000; color: white; font-family: Arial; text-align: center; margin: 0; padding: 10px; }
+        video { width: 45%; background: black; margin: 10px; border-radius: 10px; border: 2px solid #ff3b3b; }
+        button { padding: 15px 25px; background: #ff3b3b; color: white; border: none; margin: 10px; font-size: 16px; cursor: pointer; }
+        #status { margin: 15px; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <h1>🔴 Live Call</h1>
+    <div id="status">Connecting...</div>
+    <video id="localVideo" autoplay muted playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+    <br>
+    <button onclick="endCall()">End Call</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const token = localStorage.getItem("token");
+        const roomId = localStorage.getItem("roomId");
+        const sessionId = localStorage.getItem("sessionId");
+        const iceServers = JSON.parse(localStorage.getItem("iceServers") || "[]");
+
+        const socket = io();
+        let localStream, peerConnection;
+
+        async function startCall() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById("localVideo").srcObject = localStream;
+
+                peerConnection = new RTCPeerConnection({ iceServers });
+
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+                peerConnection.ontrack = e => {
+                    document.getElementById("remoteVideo").srcObject = e.streams[0];
+                };
+
+                peerConnection.onicecandidate = e => {
+                    if (e.candidate) socket.emit("ice-candidate", { roomId, candidate: e.candidate });
+                };
+
+                socket.emit("join-room", roomId);
+
+                socket.on("user-joined", async () => {
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+                    socket.emit("offer", { roomId, offer });
+                });
+
+                socket.on("offer", async offer => {
+                    await peerConnection.setRemoteDescription(offer);
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    socket.emit("answer", { roomId, answer });
+                });
+
+                socket.on("answer", async answer => {
+                    await peerConnection.setRemoteDescription(answer);
+                });
+
+                socket.on("ice-candidate", async candidate => {
+                    try { await peerConnection.addIceCandidate(candidate); } catch (err) {}
+                });
+
+                socket.on("user-left", () => { alert("Other user left"); endCall(); });
+
+                setInterval(deductMinute, 60000);
+                document.getElementById("status").innerText = "Call Connected";
+            } catch (err) {
+                console.error(err);
+                alert("Failed to start camera/mic");
+            }
+        }
+
+        async function deductMinute() {
+            const res = await fetch("/api/deduct-minute", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                body: JSON.stringify({ sessionId })
+            });
+            const data = await res.json();
+            if (!data.success) {
+                alert(data.error || "Credits ended");
+                endCall();
+            }
+        }
+
+        async function endCall() {
+            socket.emit("leave-room", roomId);
+            if (localStream) localStream.getTracks().forEach(t => t.stop());
+            await fetch("/api/end-call", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                body: JSON.stringify({ sessionId })
+            });
+            window.location.href = "index.html";
+        }
+
+        startCall();
+    </script>
+</body>
+</html>
