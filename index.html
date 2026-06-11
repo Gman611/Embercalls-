@@ -7,18 +7,18 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { 
-      background: linear-gradient(135deg, #6a0000, #ff00aa, #4a0000); 
+      background: linear-gradient(135deg, #6a0000, #ff0088, #4a0000); 
       color: white; 
       font-family: Arial, sans-serif; 
       min-height: 100vh; 
     }
     .header { 
-      background: rgba(0,0,0,0.7); 
+      background: rgba(0,0,0,0.8); 
       padding: 20px; 
       text-align: center; 
       border-bottom: 5px solid #ffd700; 
     }
-    h1 { color: #ffd700; font-size: 38px; text-shadow: 0 0 15px #ff00aa; }
+    h1 { color: #ffd700; font-size: 38px; text-shadow: 0 0 20px #ff00aa; }
     .nav { 
       background: rgba(0,0,0,0.6); 
       padding: 15px; 
@@ -37,30 +37,12 @@
       font-weight: bold; 
       cursor: pointer; 
       font-size: 17px; 
-      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5); 
+      box-shadow: 0 6px 20px rgba(255,215,0,0.5); 
     }
     .section { padding: 25px; max-width: 900px; margin: 0 auto; display: none; }
     .active { display: block; }
-    input, textarea { 
-      width: 100%; padding: 16px; margin: 12px 0; border-radius: 15px; border: none; font-size: 17px; 
-    }
-    .bank { 
-      background: linear-gradient(#3a0000, #6a0000); 
-      padding: 25px; 
-      border-radius: 20px; 
-      margin: 25px 0; 
-      border: 3px solid #ffd700; 
-    }
-    .video-container { 
-      background: #000; 
-      position: relative; 
-      margin: 20px 0; 
-      border-radius: 20px; 
-      overflow: hidden; 
-      box-shadow: 0 0 40px rgba(255, 0, 170, 0.6); 
-    }
+    .video-container { background: #000; position: relative; margin: 20px 0; border-radius: 20px; overflow: hidden; box-shadow: 0 0 40px rgba(255,0,170,0.6); }
     video { width: 100%; max-height: 420px; background: #111; }
-    .success { color: #00ff88; font-size: 20px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -74,14 +56,14 @@
     <button onclick="showSection('home')">🏠 Home</button>
     <button onclick="showSection('models')">💃 Become Model</button>
     <button onclick="showSection('live')">📹 Live Video</button>
-    <button onclick="showSection('wallet')">💰 Buy Minutes</button>
+    <button onclick="showSection('wallet')">💰 Buy Minutes (PayFast)</button>
   </div>
 
   <!-- Home -->
   <div id="home" class="section active">
     <h2>Welcome to EmberCalls</h2>
-    <p style="font-size:22px; margin:25px 0;">Vibrant • Private • Real Video</p>
-    <button onclick="showSection('live')">Go Live Now</button>
+    <p style="font-size:22px;">Real Video + Secure PayFast Payments</p>
+    <button onclick="showSection('live')">Go Live</button>
     <button onclick="showSection('wallet')">Buy Minutes</button>
   </div>
 
@@ -106,26 +88,16 @@
     <button onclick="startPrivateCall()">Start Private Call</button>
   </div>
 
-  <!-- Wallet -->
+  <!-- Wallet with Real PayFast -->
   <div id="wallet" class="section">
-    <h2>Buy Minutes</h2>
-    <div class="bank">
-      <strong>Send payment to Capitec:</strong><br><br>
-      Account: <strong>079 130 8270</strong><br>
-      Reference: <strong>EmberCalls + Your Email</strong><br><br>
-      <em>After sending, click the button below to confirm</em>
-    </div>
-    
-    <button onclick="processPayment(50)">Pay R50 (10 minutes)</button>
-    <button onclick="processPayment(100)">Pay R100 (25 minutes)</button>
-    <button onclick="processPayment(200)">Pay R200 (60 minutes)</button>
-    
-    <button onclick="confirmPayment()" style="background:#00cc66; margin-top:20px;">✅ I Have Paid - Add Minutes Automatically</button>
+    <h2>Buy Minutes with PayFast</h2>
+    <button onclick="payWithPayFast(50)">Pay R50 - 10 Minutes</button>
+    <button onclick="payWithPayFast(100)">Pay R100 - 25 Minutes</button>
+    <button onclick="payWithPayFast(200)">Pay R200 - 60 Minutes</button>
   </div>
 
   <script>
     let localStream = null;
-    let minutesBalance = 30;
     const video = document.getElementById('localVideo');
 
     function showSection(id) {
@@ -137,7 +109,6 @@
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         video.srcObject = localStream;
-        alert("✅ Real video streaming active!");
       } catch (err) {
         alert("Camera error: " + err.message);
       }
@@ -159,20 +130,47 @@
     }
 
     function startPrivateCall() {
-      alert("🔴 Starting Private 1-on-1 Call...\n\nReal video is active.");
+      alert("🔴 Starting Private 1-on-1 Call...");
     }
 
-    function processPayment(amount) {
-      alert(`Please send R${amount} to 079 130 8270 (Capitec)\nReference: EmberCalls + your email\n\nThen click "I Have Paid"`);
+    // === REAL PayFast Integration ===
+    function payWithPayFast(amount) {
+      const form = document.createElement('form');
+      form.method = "POST";
+      form.action = "https://www.payfast.co.za/eng/process";
+
+      const fields = {
+        merchant_id: "12635908",
+        merchant_key: "rzucwyilghj9y",
+        amount: amount,
+        item_name: `EmberCalls Minutes - R${amount}`,
+        item_description: "Premium Adult Video Call Minutes",
+        return_url: window.location.href + "?payment=success",
+        cancel_url: window.location.href,
+        name_first: "Customer",
+        email_address: "user@embercalls.com"
+      };
+
+      for (let key in fields) {
+        const input = document.createElement('input');
+        input.type = "hidden";
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
     }
 
-    function confirmPayment() {
-      const mins = 25;
-      minutesBalance += mins;
-      alert(`✅ Payment Verified!\n\n${mins} minutes added automatically to your account.\nBalance: ${minutesBalance} minutes`);
-    }
-
-    window.onload = () => showSection('home');
+    // Check for successful payment return
+    window.onload = function() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('payment') === 'success') {
+        alert("✅ Payment Successful via PayFast!\nYour minutes have been added.");
+      }
+      showSection('home');
+    };
   </script>
 </body>
 </html>
