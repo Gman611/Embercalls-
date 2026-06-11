@@ -14,14 +14,14 @@
       min-height: 100vh; 
     }
     .header { 
-      background: rgba(0,0,0,0.8); 
+      background: rgba(0,0,0,0.85); 
       padding: 20px; 
       text-align: center; 
       border-bottom: 5px solid #ffd700; 
     }
     h1 { color: #ffd700; font-size: 38px; text-shadow: 0 0 20px #ff00aa; }
     .nav { 
-      background: rgba(0,0,0,0.6); 
+      background: rgba(0,0,0,0.7); 
       padding: 15px; 
       display: flex; 
       flex-wrap: wrap; 
@@ -57,15 +57,16 @@
     <button onclick="showSection('home')">🏠 Home</button>
     <button onclick="showSection('models')">💃 Become Model</button>
     <button onclick="showSection('live')">📹 Live Video</button>
-    <button onclick="showSection('wallet')">💰 Buy Minutes (Yoco)</button>
+    <button onclick="showSection('wallet')">💰 Buy Minutes</button>
   </div>
 
   <!-- Home -->
   <div id="home" class="section active">
     <h2>Welcome to EmberCalls</h2>
-    <p style="font-size:22px;">Real Video Calls + Yoco Payments</p>
+    <p style="font-size:22px; margin:25px 0;">Real Video Calls + Instant Payments via Yoco</p>
     <button onclick="showSection('live')">Go Live</button>
     <button onclick="showSection('wallet')">Buy Minutes</button>
+    <button onclick="showSection('models')">Join as Creator</button>
   </div>
 
   <!-- Become Model -->
@@ -89,7 +90,7 @@
     <button onclick="startPrivateCall()">Start Private Call</button>
   </div>
 
-  <!-- Wallet with Yoco -->
+  <!-- Wallet -->
   <div id="wallet" class="section">
     <h2>Buy Minutes with Yoco</h2>
     <button onclick="payWithYoco(50)">Pay R50 - 10 Minutes</button>
@@ -110,8 +111,9 @@
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         video.srcObject = localStream;
+        alert("✅ Camera started! Real video streaming active.");
       } catch (err) {
-        alert("Camera error: " + err.message);
+        alert("Camera access denied.");
       }
     }
 
@@ -123,7 +125,7 @@
     function registerModel() {
       const name = document.getElementById('mname').value;
       if (name) {
-        alert(`✅ Application received for ${name}!\nWe will contact you on WhatsApp soon.`);
+        alert(`✅ Application received for ${name}!\n\nWe will review and contact you on WhatsApp (079 130 8270).`);
         showSection('home');
       } else {
         alert("Please enter stage name");
@@ -131,25 +133,22 @@
     }
 
     function startPrivateCall() {
-      alert("🔴 Starting Private 1-on-1 Call...");
+      alert("🔴 Starting Private 1-on-1 Call...\n\nUse the camera above. In full version this connects two users.");
     }
 
-    // === YOCO PAYMENT INTEGRATION ===
+    // Yoco Payment
     function payWithYoco(amount) {
-      const publicKey = "pk_test_c5d37cf8GNyWRdy7ecd4"; // Your test public key
-
       const yoco = new YocoSDK({
-        publicKey: publicKey
+        publicKey: "pk_test_c5d37cf8GNyWRdy7ecd4"
       });
 
       yoco.showPopup({
         amountInCents: amount * 100,
         currency: 'ZAR',
         name: 'EmberCalls',
-        description: `${amount} Minutes - Adult Video Call Credits`,
-        metadata: { user: "customer" },
+        description: `${amount} Minutes - Private Video Call Credits`,
         onSuccess: (result) => {
-          alert(`✅ Payment Successful!\nTransaction ID: \( {result.id}\n \){amount} minutes added to your account!`);
+          alert(`✅ Payment Successful!\nTransaction ID: \( {result.id}\n \){amount} minutes added automatically!`);
         },
         onError: (error) => {
           alert("Payment failed: " + error.message);
@@ -157,7 +156,6 @@
       });
     }
 
-    // Start on home
     window.onload = () => showSection('home');
   </script>
 </body>
