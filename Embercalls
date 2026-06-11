@@ -1,0 +1,715 @@
+#!/bin/bash
+
+mkdir -p embercalls/public
+cd embercalls
+
+cat > package.json <<'EOF'
+{
+  "name": "embercalls",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1",
+    "socket.io": "^4.8.1"
+  }
+}
+EOF
+
+cat > .env <<'EOF'
+PORT=3000
+JWT_SECRET=CHANGE_THIS_TO_A_LONG_RANDOM_SECRET
+DATABASE_URL=postgresql://username:password@localhost:5432/embercalls
+BASE_URL=http://localhost:3000
+
+YOCO_SECRET_KEY=PASTE_YOUR_YOCO_SECRET_KEY_HERE
+
+TURN_URL=
+TURN_USERNAME=
+TURN_PASSWORD=
+EOF
+
+cat > schema.sql <<'EOF'
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  credits INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS creators (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  display_name VARCHAR(100) NOT NULL,
+  bio TEXT,
+  rate_per_minute INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS call_sessions (
+  id SERIAL PRIMARY KEY,
+  customer_id INTEGER REFERENCES users(id),
+  creator_id INTEGER REFERENCES creators(id),
+  active BOOLEAN DEFAULT true,
+  started_at TIMESTAMP DEFAULT NOW(),
+  ended_at TIMESTAMP
+);
+EOF
+
+cat > server.js <<'EOF'
+require("dotenv").config();
+
+const express = require("express");
+const cors = require("cors");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { Pool } = require("pg");
+const http = require("http");
+const { Server } = require("socket.io");
+const path = require("path");
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET;
+const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+const creditPackages = {
+  "10min": { credits: 85, amount: 500, label: "10 Minutes Pack" },
+  "60min": { credits: 415, amount: 2500, label: "60 Minutes Pack" },
+  "360min": { credits: 1650, amount: 10000, label: "360 Minutes Pack" }
+};
+
+function createToken(userId) {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
+}
+
+function auth(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ error: "No token" });
+
+  const token = header.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+app.get("/api/status", (req, res) => {
+  res.json({ status: "EmberCalls online" });
+});
+
+app.post("/api/register", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password required" });
+    }
+
+    const existing = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: "Email already exists" });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+
+    const result = await pool.query(
+      "INSERT INTO users (email, password_hash, credits) VALUES ($1, $2, 0) RETURNING id, email, credits",
+      [email, hash]
+    );
+
+    const user = result.rows[0];
+
+    res.json({
+      success: true,
+      token: createToken(user.id),
+      user
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Register failed" });
+  }
+});
+
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: "Wrong email or password" });
+    }
+
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(password, user.password_hash);
+
+    if (!valid) {
+      return res.status(401).json({ error: "Wrong email or password" });
+    }
+
+    res.json({
+      success: true,
+      token: createToken(user.id),
+      user: {
+        id: user.id,
+        email: user.email,
+        credits: user.credits
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+app.get("/api/me", auth, async (req, res) => {
+  const result = await pool.query(
+    "SELECT id, email, credits FROM users WHERE id = $1",
+    [req.userId]
+  );
+
+  res.json(result.rows[0] || {});
+});
+
+app.post("/api/buy-credits", auth, async (req, res) => {
+  try {
+    const { packageName } = req.body;
+    const pkg = creditPackages[packageName];
+
+    if (!pkg) return res.status(400).json({ error: "Invalid package" });
+    if (!YOCO_SECRET_KEY) return res.status(500).json({ error: "Yoco secret key missing" });
+
+    const checkoutPayload = {
+      amount: pkg.amount,
+      currency: "ZAR",
+      description: `EmberCalls ${pkg.label}`,
+      successUrl: `${BASE_URL}/success?packageName=${encodeURIComponent(packageName)}`,
+      cancelUrl: `${BASE_URL}/`,
+      failureUrl: `${BASE_URL}/`,
+      metadata: {
+        userId: req.userId,
+        packageName,
+        credits: pkg.credits
+      }
+    };
+
+    const yocoRes = await fetch("https://payments.yoco.com/api/checkouts", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${YOCO_SECRET_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(checkoutPayload)
+    });
+
+    const checkout = await yocoRes.json();
+
+    if (!yocoRes.ok) {
+      console.error("Yoco error:", checkout);
+      return res.status(500).json({ error: "Failed to create Yoco checkout", details: checkout });
+    }
+
+    res.json({
+      success: true,
+      redirectUrl: checkout.redirectUrl || checkout.url || checkout.checkoutUrl,
+      checkoutId: checkout.id
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Payment failed" });
+  }
+});
+
+app.get("/success", async (req, res) => {
+  res.redirect("/?paymentSuccess=true");
+});
+
+app.post("/api/creator", auth, async (req, res) => {
+  try {
+    const { displayName, bio, ratePerMinute } = req.body;
+
+    if (!displayName || !ratePerMinute) {
+      return res.status(400).json({ error: "Display name and rate required" });
+    }
+
+    const result = await pool.query(
+      "INSERT INTO creators (user_id, display_name, bio, rate_per_minute) VALUES ($1, $2, $3, $4) RETURNING *",
+      [req.userId, displayName, bio || "", ratePerMinute]
+    );
+
+    res.json({ success: true, creator: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not create creator profile" });
+  }
+});
+
+app.get("/api/creators", async (req, res) => {
+  const result = await pool.query(
+    "SELECT creators.*, users.email FROM creators JOIN users ON users.id = creators.user_id ORDER BY creators.id DESC"
+  );
+
+  res.json(result.rows);
+});
+
+app.post("/api/start-call", auth, async (req, res) => {
+  try {
+    const { creatorId } = req.body;
+
+    const creatorRes = await pool.query("SELECT * FROM creators WHERE id = $1", [creatorId]);
+
+    if (creatorRes.rows.length === 0) {
+      return res.status(404).json({ error: "Creator not found" });
+    }
+
+    const creator = creatorRes.rows[0];
+
+    const userRes = await pool.query("SELECT credits FROM users WHERE id = $1", [req.userId]);
+
+    if (userRes.rows[0].credits < creator.rate_per_minute) {
+      return res.status(402).json({ error: "Not enough credits" });
+    }
+
+    const sessionRes = await pool.query(
+      "INSERT INTO call_sessions (customer_id, creator_id) VALUES ($1, $2) RETURNING *",
+      [req.userId, creatorId]
+    );
+
+    const session = sessionRes.rows[0];
+
+    res.json({
+      success: true,
+      session,
+      roomId: `room-${session.id}`,
+      ratePerMinute: creator.rate_per_minute,
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        process.env.TURN_URL
+          ? {
+              urls: process.env.TURN_URL,
+              username: process.env.TURN_USERNAME,
+              credential: process.env.TURN_PASSWORD
+            }
+          : null
+      ].filter(Boolean)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to start call" });
+  }
+});
+
+app.post("/api/deduct-minute", auth, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+
+    const sessRes = await pool.query(
+      "SELECT call_sessions.*, creators.rate_per_minute FROM call_sessions JOIN creators ON creators.id = call_sessions.creator_id WHERE call_sessions.id = $1 AND call_sessions.customer_id = $2 AND active = true",
+      [sessionId, req.userId]
+    );
+
+    if (sessRes.rows.length === 0) {
+      return res.status(404).json({ error: "Active session not found" });
+    }
+
+    const session = sessRes.rows[0];
+
+    const userRes = await pool.query("SELECT credits FROM users WHERE id = $1", [req.userId]);
+
+    if (userRes.rows[0].credits < session.rate_per_minute) {
+      await pool.query(
+        "UPDATE call_sessions SET active=false, ended_at=NOW() WHERE id=$1",
+        [sessionId]
+      );
+
+      return res.status(402).json({ error: "Not enough credits" });
+    }
+
+    const updated = await pool.query(
+      "UPDATE users SET credits = credits - $1 WHERE id = $2 RETURNING id, email, credits",
+      [session.rate_per_minute, req.userId]
+    );
+
+    res.json({ success: true, user: updated.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Deduct failed" });
+  }
+});
+
+app.post("/api/end-call", auth, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+
+    await pool.query(
+      "UPDATE call_sessions SET active=false, ended_at=NOW() WHERE id=$1",
+      [sessionId]
+    );
+
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: "End call failed" });
+  }
+});
+
+io.on("connection", socket => {
+  socket.on("join-room", roomId => {
+    socket.join(roomId);
+    socket.to(roomId).emit("user-joined");
+  });
+
+  socket.on("offer", data => socket.to(data.roomId).emit("offer", data.offer));
+  socket.on("answer", data => socket.to(data.roomId).emit("answer", data.answer));
+  socket.on("ice-candidate", data => socket.to(data.roomId).emit("ice-candidate", data.candidate));
+
+  socket.on("leave-room", roomId => {
+    socket.leave(roomId);
+    socket.to(roomId).emit("user-left");
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`EmberCalls running on http://localhost:${PORT}`);
+});
+EOF
+
+cat > public/index.html <<'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EmberCalls</title>
+  <style>
+    body { font-family: Arial; background: #140000; color: white; padding: 20px; }
+    input, textarea, button { display: block; margin: 10px 0; padding: 12px; width: 300px; }
+    button { background: #ff3b3b; color: white; border: none; cursor: pointer; }
+    .card { background: #2a0000; padding: 15px; margin: 15px 0; border-radius: 10px; max-width: 400px; }
+  </style>
+</head>
+<body>
+  <h1>EmberCalls</h1>
+
+  <h2>Register</h2>
+  <input id="regEmail" placeholder="Email">
+  <input id="regPassword" placeholder="Password" type="password">
+  <button onclick="register()">Register</button>
+
+  <h2>Login</h2>
+  <input id="loginEmail" placeholder="Email">
+  <input id="loginPassword" placeholder="Password" type="password">
+  <button onclick="login()">Login</button>
+
+  <h2>My Account</h2>
+  <button onclick="loadMe()">Refresh Account</button>
+  <p id="account"></p>
+
+  <h2>Buy Credits</h2>
+  <button onclick="buyCredits('10min')">Buy 10 min pack - R5</button>
+  <button onclick="buyCredits('60min')">Buy 60 min pack - R25</button>
+  <button onclick="buyCredits('360min')">Buy 360 min pack - R100</button>
+
+  <h2>Create Creator Profile</h2>
+  <input id="displayName" placeholder="Display name">
+  <textarea id="bio" placeholder="Bio"></textarea>
+  <input id="rate" placeholder="Rate per minute credits" type="number">
+  <button onclick="createCreator()">Create Creator Profile</button>
+
+  <h2>Available Creators</h2>
+  <button onclick="loadCreators()">Load Creators</button>
+  <div id="creators"></div>
+
+  <script>
+    let token = localStorage.getItem("token");
+
+    async function api(url, method = "GET", body = null) {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : ""
+        },
+        body: body ? JSON.stringify(body) : null
+      });
+
+      return res.json();
+    }
+
+    async function register() {
+      const data = await api("/api/register", "POST", {
+        email: document.getElementById("regEmail").value,
+        password: document.getElementById("regPassword").value
+      });
+
+      if (data.token) {
+        token = data.token;
+        localStorage.setItem("token", token);
+      }
+
+      alert(JSON.stringify(data));
+      loadMe();
+    }
+
+    async function login() {
+      const data = await api("/api/login", "POST", {
+        email: document.getElementById("loginEmail").value,
+        password: document.getElementById("loginPassword").value
+      });
+
+      if (data.token) {
+        token = data.token;
+        localStorage.setItem("token", token);
+      }
+
+      alert(JSON.stringify(data));
+      loadMe();
+    }
+
+    async function loadMe() {
+      const data = await api("/api/me");
+
+      if (data.email) {
+        document.getElementById("account").innerText =
+          `Email: ${data.email} | Credits: ${data.credits}`;
+      }
+    }
+
+    async function buyCredits(packageName) {
+      const data = await api("/api/buy-credits", "POST", { packageName });
+
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        alert(JSON.stringify(data));
+      }
+    }
+
+    async function createCreator() {
+      const data = await api("/api/creator", "POST", {
+        displayName: document.getElementById("displayName").value,
+        bio: document.getElementById("bio").value,
+        ratePerMinute: Number(document.getElementById("rate").value)
+      });
+
+      alert(JSON.stringify(data));
+    }
+
+    async function loadCreators() {
+      const data = await api("/api/creators");
+      const container = document.getElementById("creators");
+
+      container.innerHTML = "";
+
+      data.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "card";
+
+        div.innerHTML = `
+          <h3>${c.display_name}</h3>
+          <p>${c.bio || ""}</p>
+          <p>Rate: ${c.rate_per_minute} credits/min</p>
+          <button onclick="startCall(${c.id})">Start Video Call</button>
+        `;
+
+        container.appendChild(div);
+      });
+    }
+
+    async function startCall(creatorId) {
+      const data = await api("/api/start-call", "POST", { creatorId });
+
+      if (!data.success) {
+        alert(JSON.stringify(data));
+        return;
+      }
+
+      localStorage.setItem("roomId", data.roomId);
+      localStorage.setItem("sessionId", data.session.id);
+      localStorage.setItem("iceServers", JSON.stringify(data.iceServers));
+
+      window.location.href = "/call.html";
+    }
+
+    window.onload = function () {
+      const params = new URLSearchParams(window.location.search);
+
+      if (params.get("paymentSuccess") === "true") {
+        alert("Payment successful.");
+        window.history.replaceState({}, document.title, "/");
+      }
+
+      if (token) loadMe();
+    };
+  </script>
+</body>
+</html>
+EOF
+
+cat > public/call.html <<'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EmberCalls - Live Call</title>
+  <style>
+    body { background: #100; color: white; font-family: Arial; text-align: center; }
+    video { width: 45%; background: black; margin: 10px; border-radius: 10px; }
+    button { padding: 12px 20px; background: #ff3b3b; color: white; border: none; cursor: pointer; margin: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Live Call Room</h1>
+
+  <video id="localVideo" autoplay muted playsinline></video>
+  <video id="remoteVideo" autoplay playsinline></video>
+
+  <br>
+
+  <button onclick="endCall()">End Call</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    const token = localStorage.getItem("token");
+    const roomId = localStorage.getItem("roomId");
+    const sessionId = localStorage.getItem("sessionId");
+    const iceServers = JSON.parse(localStorage.getItem("iceServers") || "[]");
+
+    const socket = io();
+
+    let localStream;
+    let peerConnection;
+    let deductTimer;
+
+    async function start() {
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+      });
+
+      document.getElementById("localVideo").srcObject = localStream;
+
+      peerConnection = new RTCPeerConnection({ iceServers });
+
+      localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+      });
+
+      peerConnection.ontrack = e => {
+        document.getElementById("remoteVideo").srcObject = e.streams[0];
+      };
+
+      peerConnection.onicecandidate = e => {
+        if (e.candidate) {
+          socket.emit("ice-candidate", { roomId, candidate: e.candidate });
+        }
+      };
+
+      socket.emit("join-room", roomId);
+
+      socket.on("user-joined", async () => {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit("offer", { roomId, offer });
+      });
+
+      socket.on("offer", async offer => {
+        await peerConnection.setRemoteDescription(offer);
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit("answer", { roomId, answer });
+      });
+
+      socket.on("answer", async answer => {
+        await peerConnection.setRemoteDescription(answer);
+      });
+
+      socket.on("ice-candidate", async candidate => {
+        try {
+          await peerConnection.addIceCandidate(candidate);
+        } catch (e) {
+          console.error(e);
+        }
+      });
+
+      socket.on("user-left", () => {
+        alert("The other person left the call");
+        endCall();
+      });
+
+      deductTimer = setInterval(deductMinute, 60000);
+    }
+
+    async function deductMinute() {
+      const res = await fetch("/api/deduct-minute", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ sessionId })
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.error || "Call ended");
+        endCall();
+      }
+    }
+
+    async function endCall() {
+      clearInterval(deductTimer);
+
+      socket.emit("leave-room", roomId);
+
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+      }
+
+      await fetch("/api/end-call", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ sessionId })
+      });
+
+      window.location.href = "/";
+    }
+
+    start();
+  </script>
+</body>
+</html>
+EOF
+
+npm install
+
+echo ""
+echo "DONE."
+echo "Next:"
+echo "1. Create PostgreSQL database: embercalls"
+echo "2. Edit .env with your real DATABASE_URL and YOCO_SECRET_KEY"
+echo "3. Run: psql -d embercalls -f schema.sql"
+echo "4. Start: npm start"
+echo "5. Open: http://localhost:3000"
